@@ -1,0 +1,9 @@
+rules:
+  - capability: web_search
+    effect: allow
+  - capability: web_fetch
+    effect: allow
+  - capability: shell
+    match: ["*"]
+    exclude: ["rm -rf *", "sudo *"]   # bloqueia comandos destrutivos
+    effect: allow
