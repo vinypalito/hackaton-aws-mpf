@@ -68,9 +68,10 @@ export class AuthStack extends Stack {
         perfil: new StringAttribute({ minLen: 1, maxLen: 16, mutable: false }),
       },
       passwordPolicy: {
-        minLength: 12,
+        // Demo do hackathon (base sintética): senhas curtas para o público digitar (ex.: bruno123).
+        minLength: 8,
         requireLowercase: true,
-        requireUppercase: true,
+        requireUppercase: false,
         requireDigits: true,
         requireSymbols: false,
         tempPasswordValidity: Duration.days(7),

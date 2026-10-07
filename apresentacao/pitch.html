@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitch — Painel Unificado de Expedientes do Único</title>
+<style>
+:root{--papel:#f5f4ef;--tinta:#15171c;--marinho:#1b3470;--azul:#1d3c87;--verm:#b42318;--ambar:#8a5300;--verde:#1f6b4a;--cinza:#5b6070;--linha:#d8d6cc;
+--sans:'IBM Plex Sans',system-ui,'Segoe UI',Arial,sans-serif;--serif:'Newsreader',Georgia,serif;--mono:'IBM Plex Mono',Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--papel);color:var(--tinta);font-family:var(--sans)}
+a{color:var(--azul)}
+:focus-visible{outline:3px solid #f0b400;outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0;background:#fff;padding:8px;z-index:99}.skip:focus{left:8px}
+header.topo{position:fixed;top:0;left:0;right:0;height:48px;background:var(--marinho);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px;z-index:10}
+header.topo strong{font-family:var(--serif);font-size:18px}
+header.topo .esp{flex:1}
+header.topo button{background:transparent;color:#fff;border:1px solid #8ea0cc;border-radius:4px;padding:4px 10px;cursor:pointer;font:inherit;min-height:32px}
+#crono{font-family:var(--mono);min-width:56px;text-align:center}
+#crono.alerta{color:#ffb4a8}
+.progresso{position:fixed;top:48px;left:0;right:0;height:4px;background:#c9cde0;z-index:10}
+.progresso div{height:100%;background:#f0b400;width:0;transition:width .3s}
+main{position:absolute;top:52px;bottom:56px;left:0;right:0;overflow:hidden}
+section.slide{position:absolute;inset:0;padding:28px 48px;overflow:auto;display:none}
+section.slide.ativo{display:block}
+footer.nav{position:fixed;bottom:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:center;gap:16px;background:#fff;border-top:1px solid var(--linha)}
+footer.nav button{font:inherit;padding:8px 16px;border:1px solid var(--azul);background:#fff;color:var(--azul);border-radius:4px;cursor:pointer;min-height:36px}
+footer.nav button.prim{background:var(--azul);color:#fff}
+h1,h2{font-family:var(--serif);color:var(--marinho);margin:0 0 12px}
+h1{font-size:46px;line-height:1.1}h2{font-size:32px}
+h3{margin:12px 0 6px;color:var(--marinho)}
+p,li{font-size:17px;line-height:1.5}
+.selo{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor;margin-right:4px;vertical-align:middle;white-space:nowrap}
+.s-impl{color:var(--verde);background:#e3f1ea}.s-parc{color:var(--ambar);background:#fbf0dc}.s-plan{color:var(--cinza);background:#eceae3;border-style:dashed}
+.s-crit{color:var(--azul);background:#e5eaf6}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:#fff;border:1px solid var(--linha);border-radius:6px;padding:14px 16px}
+.card h3{margin-top:0}
+.kpi{font-family:var(--serif);font-size:36px;color:var(--marinho);display:block}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:14px}
+caption{text-align:left;font-weight:600;padding:6px 0;color:var(--marinho)}
+th,td{border:1px solid var(--linha);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef0f6}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.mono{font-family:var(--mono);font-size:13px}
+.capa{display:flex;flex-direction:column;justify-content:center;height:100%;max-width:1000px}
+.capa .sub{font-size:22px;color:var(--cinza)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tabs button{font:inherit;padding:6px 12px;border:1px solid var(--azul);background:#fff;color:var(--azul);border-radius:4px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--azul);color:#fff}
+.nota{font-size:13px;color:var(--cinza)}
+/* diagrama */
+.diag-wrap{display:grid;grid-template-columns:1fr 340px;gap:16px}
+svg.diag{width:100%;height:auto;background:#fff;border:1px solid var(--linha);border-radius:6px}
+svg .grupo rect{fill:none;stroke-width:2}
+svg .grupo text{font:600 13px var(--sans)}
+svg .node rect{fill:#fff;stroke:var(--marinho);stroke-width:1.5;rx:6}
+svg .node.plan rect{stroke-dasharray:6 4;stroke:var(--cinza);fill:#f7f6f1}
+svg .node text{font:12px var(--sans);fill:var(--tinta);pointer-events:none}
+svg .node text.t{font-weight:700;font-size:13px}
+svg .node{cursor:pointer}
+svg .node:hover rect,svg .node:focus rect{stroke:#f0b400;stroke-width:3}
+svg .node.on rect{fill:#fff4cc;stroke:#c98a00;stroke-width:3}
+svg .seta{stroke:var(--azul);stroke-width:1.6;fill:none;marker-end:url(#ponta)}
+svg .seta.plan{stroke:var(--cinza);stroke-dasharray:5 4}
+svg .seta.on{stroke:#c98a00;stroke-width:3}
+#painel{background:#fff;border:1px solid var(--linha);border-radius:6px;padding:14px;font-size:14px;max-height:62vh;overflow:auto}
+#painel h3{margin-top:0}
+#painel dt{font-weight:600;margin-top:8px}#painel dd{margin:2px 0 0}
+.fluxos{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.fluxos button{font:inherit;font-size:14px;padding:5px 10px;border:1px solid var(--marinho);background:#fff;border-radius:4px;cursor:pointer}
+#passo{min-height:24px;font-size:15px;color:var(--marinho);font-weight:600}
+/* calc */
+.calc-ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:10px}
+.calc-ctrl label{display:flex;flex-direction:column;font-size:13px;font-weight:600;gap:2px}
+.calc-ctrl input,.calc-ctrl select{font:inherit;padding:4px 6px;min-height:32px}
+.total{font-family:var(--serif);font-size:30px;color:var(--marinho)}
+.barra{height:14px;background:var(--azul);display:inline-block;vertical-align:middle;border-radius:2px}
+.barra.plan{background:repeating-linear-gradient(45deg,#8a8f9c,#8a8f9c 4px,#b9bcc5 4px,#b9bcc5 8px)}
+#sumario{position:fixed;top:52px;right:0;width:340px;bottom:56px;background:#fff;border-left:1px solid var(--linha);overflow:auto;padding:12px;z-index:20;display:none}
+#sumario.aberto{display:block}
+#sumario ol{padding-left:24px}#sumario li{font-size:15px}
+#sumario button{background:none;border:0;color:var(--azul);cursor:pointer;font:inherit;text-align:left;padding:3px 0;text-decoration:underline}
+.estrela{color:#c98a00}
+@media (max-width:900px){.g2,.g3,.g4,.diag-wrap{grid-template-columns:1fr}section.slide{padding:16px}h1{font-size:32px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{header.topo,footer.nav,.progresso,#sumario{display:none}main{position:static}section.slide{display:block;position:static;page-break-after:always}}
+</style>
+</head>
+<body>
+<a class="skip" href="#slides">Pular para os slides</a>
+<header class="topo">
+  <strong>Único · Painel de Expedientes</strong>
+  <span class="esp"></span>
+  <span id="crono" aria-label="Cronômetro do pitch" title="T inicia/pausa">5:00</span>
+  <button id="btCrono" type="button">Cronômetro (T)</button>
+  <button id="btSum" type="button" aria-expanded="false" aria-controls="sumario">Sumário (S)</button>
+  <button id="btFull" type="button">Tela cheia (F)</button>
+</header>
+<div class="progresso" role="progressbar" aria-label="Progresso da apresentação" aria-valuemin="1" aria-valuemax="19" aria-valuenow="1"><div id="barraProg"></div></div>
+<nav id="sumario" aria-label="Sumário"><h2 style="font-size:22px">Sumário</h2><p class="nota"><span class="estrela">★</span> = roteiro de 5 minutos</p><ol id="listaSum"></ol></nav>
+<div id="anuncio" class="skip" aria-live="polite"></div>
+<main id="slides" tabindex="-1">
+
+<section class="slide" data-titulo="Capa" data-roteiro="1">
+ <div class="capa">
+  <p><span class="selo s-crit">Hackathon AWS · MPF</span></p>
+  <h1>Painel Unificado de Expedientes do Único</h1>
+  <p class="sub">Uma fila só, priorizada e segura, para o gabinete decidir o que fazer primeiro.</p>
+  <p>100% serverless na AWS (us-east-1) · IaC com AWS CDK v2 · IA generativa com Amazon Bedrock · construído com Kiro</p>
+  <div class="grid g4" style="margin-top:20px">
+   <div class="card"><span class="kpi">4.109</span>expedientes sintéticos</div>
+   <div class="card"><span class="kpi">77</span>recursos AWS em 4 stacks CDK</div>
+   <div class="card"><span class="kpi">192</span>testes automatizados passando</div>
+   <div class="card"><span class="kpi">≈ US$ 2,29</span>por mês na demo (só o que está implantado)</div>
+  </div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Problema e público" data-roteiro="1">
+ <h2>O problema</h2>
+ <div class="grid g2">
+  <div class="card"><h3>Hoje</h3><ul>
+   <li>Expedientes espalhados em várias caixas e gerenciadores do Único.</li>
+   <li>Prazos vencendo sem aviso; sem visão única do que é urgente.</li>
+   <li>Chefia sem panorama do setor; servidor sem ordem de trabalho.</li>
+   <li>Dados sigilosos exigem cuidado em toda tela, exportação e e-mail.</li></ul></div>
+  <div class="card"><h3>Para quem</h3><ul>
+   <li><b>Membro</b>: decide o que assinar primeiro.</li>
+   <li><b>Chefe de gabinete</b>: distribui e acompanha o setor.</li>
+   <li><b>Servidor</b>: trabalha uma fila clara e priorizada.</li></ul>
+   <p class="nota">Base 100% sintética: 2 setores (GABSUB3-DVT e CIVINT/STIC), 14 usuários, 23.502 movimentações, 4.296 prazos, 7.907 notificações. Data de referência 07/10/2026 17:00 (-03:00).</p></div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Solução e demo" data-roteiro="1">
+ <h2>A solução</h2>
+ <div class="tabs" role="tablist" aria-label="Telas da solução">
+  <button role="tab" aria-selected="true" aria-controls="tb1" id="t1">Início</button>
+  <button role="tab" aria-selected="false" aria-controls="tb2" id="t2" tabindex="-1">Painel</button>
+  <button role="tab" aria-selected="false" aria-controls="tb3" id="t3" tabindex="-1">Detalhe</button>
+  <button role="tab" aria-selected="false" aria-controls="tb4" id="t4" tabindex="-1">Resumo com IA</button>
+ </div>
+ <div class="card" role="tabpanel" id="tb1" aria-labelledby="t1"><h3>Início <span class="selo s-impl">Implementado</span></h3><p>Contadores do setor por situação de prazo (vencido, vence hoje, próximos dias), notificações e atalhos. <code>GET /home</code> lê contadores e notificações pelo GSI2, sem Scan.</p></div>
+ <div class="card" role="tabpanel" id="tb2" aria-labelledby="t2" hidden><h3>Painel em 3 visões <span class="selo s-impl">Implementado</span></h3><p>Lista, quadro e radar. Ordenação pela pontuação de prioridade RN2 (0–100), filtros por caixa, gerenciador e situação de prazo, paginação por cursor validado. Filtra <code>caixa != BAIXADO</code> (RN7).</p></div>
+ <div class="card" role="tabpanel" id="tb3" aria-labelledby="t3" hidden><h3>Detalhe + histórico <span class="selo s-impl">Implementado</span></h3><p>Dados do expediente, prazos, sinais de risco e histórico de movimentações. Campos sigilosos mascarados no backend (<code>mascararSigilo</code>).</p></div>
+ <div class="card" role="tabpanel" id="tb4" aria-labelledby="t4" hidden><h3>Resumo com IA <span class="selo s-impl">Implementado</span></h3><p>Amazon Bedrock (Nova Lite, Converse API), temperatura 0,2, até 300 tokens, prompt de sistema fixo. Só campos não sensíveis vão ao modelo; expediente sigiloso retorna 403 <b>sem chamar o modelo</b>. Selo "Gerado por IA" na tela.</p></div>
+ <h3>Roteiro da demo (≈ 90 s)</h3>
+ <ol><li>Login no Cognito como <code>GABSUB3-DVT-U02</code> (CHEFE).</li><li>Início: contadores e alertas do setor.</li><li>Painel: fila priorizada, troca para quadro e radar.</li><li>Detalhe de um expediente vencido + resumo com IA.</li><li>Tentar um sigiloso: resposta bloqueada com correlationId.</li></ol>
+ <p class="nota">SPA: https://d1rlsn9g5sqwu6.cloudfront.net/ · API: https://ia21eq5d4i.execute-api.us-east-1.amazonaws.com/dev/api/v1/</p>
+</section>
+
+<section class="slide" data-titulo="Critérios de avaliação">
+ <h2>Critérios de avaliação × evidências</h2>
+ <p>6 critérios com peso igual: nota de 0 a 10 cada, 60 pontos no máximo. A nota final é a média da banca. Pitch de 5 min + 1 min de perguntas.</p>
+ <div class="grid g3">
+  <div class="card"><h3>1 · Atendimento aos requisitos</h3><p>Fluxo login → início → painel → detalhe → resumo IA implantado. Seed com 49.108 itens.</p><span class="selo s-impl">Implementado</span><span class="selo s-parc">F6–F10 parcial</span></div>
+  <div class="card"><h3>2 · Arquitetura AWS</h3><p>Lambda + API Gateway + DynamoDB + Cognito + S3/CloudFront + Bedrock. CDK v2, 4 stacks, 77 recursos.</p><span class="selo s-impl">Implementado</span><span class="selo s-plan">Scheduler planejado</span></div>
+  <div class="card"><h3>3 · Inovação e criatividade</h3><p>Prioridade RN2 0–100, visões lista/quadro/radar, sinais de risco, IA com sigilo barrado antes do modelo, spec Kiro completa.</p><span class="selo s-impl">Implementado</span></div>
+  <div class="card"><h3>4 · Segurança</h3><p>Cognito PKCE, Authorizer em todas as rotas, autorização por setor/sigilo no backend, 1 role por Lambda sem "*", SSE-S3, OAC.</p><span class="selo s-impl">Implementado</span></div>
+  <div class="card"><h3>5 · Apresentação do MVP</h3><p>Este deck: roteiro de 5 min, diagrama interativo, calculadora de custos, cronômetro.</p><span class="selo s-impl">Implementado</span></div>
+  <div class="card"><h3>6 · Viabilidade e escalabilidade</h3><p>On-demand, sem Scan, throttling 50/100, domínio puro reutilizável, 192 testes, custo estimado por cenário.</p><span class="selo s-impl">Implementado</span></div>
+ </div>
+ <p class="nota">Escala da banca: 9–10 Excelente · 7–8 Bom · 5–6 Satisfatório · 3–4 Parcial · 0–2 Insuficiente.</p>
+</section>
+
+<section class="slide" data-titulo="Matriz Critérios × Evidências">
+ <h2>Matriz: 32 itens avaliados</h2>
+ <div id="matriz"></div>
+</section>
+
+<section class="slide" data-titulo="Arquitetura AWS (diagrama)" data-roteiro="1">
+ <h2>Arquitetura na AWS · us-east-1 <span class="selo s-crit">Critério 2</span></h2>
+ <div class="fluxos" role="group" aria-label="Animar fluxos">
+  <button type="button" data-fluxo="0">▶ Login</button><button type="button" data-fluxo="1">▶ Consultar painel</button><button type="button" data-fluxo="2">▶ Resumo com IA</button><button type="button" data-fluxo="3">▶ Lote assíncrono (planejado)</button><button type="button" data-fluxo="4">▶ Resumo diário por e-mail (planejado)</button>
+ </div>
+ <p id="passo" aria-live="polite"></p>
+ <div class="diag-wrap">
+  <svg class="diag" id="diag" viewBox="0 0 1100 640" role="group" aria-label="Diagrama de arquitetura. Cada componente é um botão que abre os detalhes."><defs><marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#1d3c87"/></marker></defs><g id="gGrupos"></g><g id="gSetas"></g><g id="gNos"></g></svg>
+  <aside id="painel" aria-live="polite"><h3>Clique em um componente</h3><p>Use Tab para navegar pelos componentes e Enter para abrir os detalhes: configuração real (do <span class="mono">cdk.out</span>), stack CDK, permissões IAM e custo no cenário da calculadora.</p>
+  <p><span class="selo s-impl">Implementado</span> borda contínua · <span class="selo s-plan">Planejado</span> borda tracejada</p></aside>
+ </div>
+ <details style="margin-top:8px"><summary>Descrição textual do diagrama</summary><ul id="diagTexto"></ul></details>
+</section>
+
+<section class="slide" data-titulo="Inventário de infraestrutura">
+ <h2>Inventário: 77 recursos em 4 stacks <span class="selo s-crit">Critério 2</span></h2>
+ <p class="nota">Fonte: <span class="mono">app/infra/cdk.out/*.template.json</span> (sem AWS::CDK::Metadata). Tags em todos os recursos: <span class="mono">projeto=painel-expedientes</span>, <span class="mono">ambiente=dev</span>. Região us-east-1. CDK v2 2.272.0.</p>
+ <label style="font-size:14px;font-weight:600">Filtrar por stack
+  <select id="filtroInv"><option value="">Todas</option><option>DadosStack</option><option>AuthStack</option><option>ApiStack</option><option>WebStack</option><option>AgendamentosStack</option><option>ObservabilidadeStack</option></select></label>
+ <table id="tabInv" style="margin-top:8px"><caption>Recursos por stack, tipo e configuração-chave</caption>
+  <thead><tr><th scope="col">Stack</th><th scope="col">Tipo CloudFormation</th><th scope="col" class="num">Qtd.</th><th scope="col">Configuração-chave</th><th scope="col">Status</th></tr></thead>
+  <tbody>
+  <tr data-st="DadosStack"><td>DadosStack</td><td class="mono">AWS::DynamoDB::Table</td><td class="num">1</td><td>Expedientes · PK/SK + GSI1 + GSI2 (ALL) · on-demand · PITR · TTL expiraEm · criptografia AWS</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPool</td><td class="num">1</td><td>Só admin cria · senha ≥ 12 · alias e-mail · custom:idUsuario/siglaSetor/perfil imutáveis · recuperação admin_only</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPoolClient</td><td class="num">1</td><td>SPA sem segredo · code flow + PKCE · SRP · tokens 60 min · refresh 12 h · revogação</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPoolDomain</td><td class="num">1</td><td>Hosted UI</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::RestApi / Stage / Deployment</td><td class="num">3</td><td>REGIONAL · stage dev · throttling 50 rps / burst 100 · métricas</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::Authorizer</td><td class="num">1</td><td>COGNITO_USER_POOLS · cache 300 s</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::Resource / Method</td><td class="num">7 + 13</td><td>api, v1, me, home, expedientes, {id}, resumo · 5 métodos com Cognito + 8 OPTIONS (CORS restrito)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::GatewayResponse</td><td class="num">5</td><td>401, 403, 429, 4xx, 5xx com correlationId e CORS</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Lambda::Function</td><td class="num">5</td><td>FnMe, FnHome, FnListarExpedientes, FnDetalheExpediente, FnResumoExpediente · nodejs24.x · arm64 · 1024 MB · 10 s (15 s no resumo)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Lambda::Permission</td><td class="num">10</td><td>Invocação só pelo próprio API Gateway (rota e test-invoke)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::IAM::Role / Policy</td><td class="num">5 + 5</td><td>1 role por Lambda · GetItem/Query/InvokeModel com ARNs exatos · teste CDK garante "sem *" em dados</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Logs::LogGroup</td><td class="num">5</td><td>1 por função · retenção 30 dias</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">AWS::S3::Bucket / BucketPolicy</td><td class="num">1 + 1</td><td>Block Public Access · SSE-S3 AES256 · enforceSSL · autoDelete</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">AWS::CloudFront::Distribution / OriginAccessControl</td><td class="num">1 + 1</td><td>HTTP/2+3 · IPv6 · redirect-to-https · CachingOptimized · SecurityHeadersPolicy · OAC SigV4</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">Custom::CDKBucketDeployment + AwsCliLayer + Lambda/Role/Policy</td><td class="num">2 + 2 + 3</td><td>Publica o build Angular · Lambda python3.13 arm64 1024 MB 900 s</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">Custom::S3AutoDeleteObjects + provider Lambda/Role</td><td class="num">1 + 2</td><td>Esvazia o bucket no destroy · nodejs24.x 128 MB</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AgendamentosStack"><td>AgendamentosStack</td><td class="mono">AWS::Scheduler::Schedule · Lambda · SES</td><td class="num">—</td><td>07:00 diário (alertas + resumo por e-mail) · reconciliação a cada 15 min</td><td><span class="selo s-plan">Planejado</span></td></tr>
+  <tr data-st="ObservabilidadeStack"><td>ObservabilidadeStack</td><td class="mono">AWS::CloudWatch::Dashboard / Alarm · LogGroup auditoria</td><td class="num">—</td><td>Dashboard, alarmes simples, métricas EMF, /painel-expedientes/auditoria</td><td><span class="selo s-plan">Planejado</span></td></tr>
+  </tbody></table>
+ <p class="nota">Totais por stack: DadosStack 1 · AuthStack 3 · ApiStack 59 · WebStack 14 = 77.</p>
+</section>
+
+<section class="slide" data-titulo="Dados (DynamoDB tabela única)">
+ <h2>Dados: tabela única no DynamoDB <span class="selo s-crit">Critério 1</span><span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g2">
+  <div class="card"><h3>Modelo</h3><table><caption>Chaves</caption><thead><tr><th scope="col">Chave</th><th scope="col">Uso</th></tr></thead><tbody>
+   <tr><td class="mono">PK / SK</td><td>Expediente, movimentações (histórico), prazos, preferências</td></tr>
+   <tr><td class="mono">GSI1</td><td>Fila do setor por caixa/gerenciador, ordenada por prioridade</td></tr>
+   <tr><td class="mono">GSI2</td><td>Contadores CONT# e notificações NOT# do usuário/setor</td></tr></tbody></table></div>
+  <div class="card"><h3>Garantias</h3><ul>
+   <li>Seed do kit carregado como está: 49.108 itens.</li>
+   <li>Todo acesso centralizado em <span class="mono">services/api/repositorio/</span>.</li>
+   <li>Nenhuma rota usa Scan e o IAM nem concede a ação.</li>
+   <li>Só ExpressionAttributeValues (sem concatenação).</li>
+   <li>Regras puras em <span class="mono">packages/dominio</span>, sem AWS.</li>
+   <li>Escritas transacionais com versão condicional <span class="selo s-plan">Planejado</span></li></ul></div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Segurança e LGPD" data-roteiro="1">
+ <h2>Segurança por padrão <span class="selo s-crit">Critério 4</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Identidade</h3><ul><li>Cognito sem auto cadastro</li><li>Senha ≥ 12, PKCE, revogação</li><li>Setor, perfil e usuário só das claims do token</li></ul></div>
+  <div class="card"><h3>Autorização no backend</h3><ul><li>Authorizer nas 5 rotas</li><li><span class="mono">autorizar</span>: matriz como dados, negação por padrão</li><li>Outro setor → 404 (não revela existência)</li><li>Sigilo mascarado antes de responder</li></ul></div>
+  <div class="card"><h3>Menor privilégio</h3><ul><li>1 role por Lambda</li><li>Ações e ARNs exatos, sem "*" em dados</li><li>Testado por assertions do CDK</li></ul></div>
+  <div class="card"><h3>Transporte e repouso</h3><ul><li>HTTPS-only, OAC, enforceSSL</li><li>SSE-S3, DynamoDB criptografado</li><li>Security headers no CloudFront</li></ul></div>
+  <div class="card"><h3>Dados sensíveis</h3><ul><li>Logger com lista branca de 9 campos</li><li>Erros sem stack trace, com correlationId</li><li>Nada sigiloso no prompt da IA</li></ul></div>
+  <div class="card"><h3>LGPD</h3><ul><li>Base 100% sintética</li><li>Script destruir remove o ambiente</li><li>Credenciais fora do repositório</li></ul></div>
+ </div>
+ <p class="nota">Pendências honestas: JSON Schema no API Gateway e usage plan <span class="selo s-plan">Planejado</span>; TLS 1.2 mínimo no código, mas sem domínio próprio o CloudFront usa o certificado padrão.</p>
+</section>
+
+<section class="slide" data-titulo="Escalabilidade e desempenho">
+ <h2>Escalabilidade e desempenho <span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Escala automática</h3><p>Lambda, API Gateway e DynamoDB on-demand escalam sem servidor. Custo zero ocioso (exceto armazenamento).</p></div>
+  <div class="card"><h3>Consultas eficientes</h3><p>Query por GSI com paginação por cursor (limite 1–100). Sem Scan: custo e latência crescem com a página, não com a base.</p></div>
+  <div class="card"><h3>Proteção</h3><p>Throttling 50 rps / burst 100 no stage. arm64 com 1024 MB reduz custo e cold start. esbuild minificado.</p></div>
+ </div>
+ <p>Próximos passos: índice de busca em memória remontado por versão, lote assíncrono 51–200 itens (HTTP 202), teste de carga k6 <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="Acessibilidade (eMAG/WCAG)">
+ <h2>Acessibilidade e responsividade</h2>
+ <ul>
+  <li><span class="mono">lang=pt-BR</span>, link "pular para o conteúdo", título por rota.</li>
+  <li>Tabelas com caption e cabeçalhos; label em todo campo; <span class="mono">aria-live</span> para avisos e <span class="mono">role=alert</span> com correlationId.</li>
+  <li>Botões com <span class="mono">aria-pressed</span>, navegação por teclado, foco visível, prefers-reduced-motion.</li>
+  <li>Contraste ≥ 4,5:1; nenhuma informação só por cor (selos com texto).</li>
+  <li>Cartões abaixo de 768 px, alvos ≥ 24 px, reflow em 320 px.</li>
+ </ul>
+ <p class="nota">Conformidade plena exige teste manual com tecnologias assistivas e revisão especializada. axe-core automatizado está <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="Qualidade e testes">
+ <h2>Qualidade: 192 testes passando</h2>
+ <table style="max-width:640px"><caption>npm test na raiz de app/ (Vitest) · 21 arquivos</caption><thead><tr><th scope="col">Pacote</th><th scope="col" class="num">Testes</th><th scope="col">O que cobre</th></tr></thead><tbody>
+  <tr><td>packages/dominio</td><td class="num">55</td><td>Prazo, prioridade, risco, autorização, máscara</td></tr>
+  <tr><td>services/api</td><td class="num">53</td><td>Handlers, repositório, erros, IA</td></tr>
+  <tr><td>infra (assertions CDK)</td><td class="num">28</td><td>IAM sem "*", criptografia, tags, throttling</td></tr>
+  <tr><td>scripts</td><td class="num">32</td><td>Carga do seed, paridade com o kit</td></tr>
+  <tr><td>web</td><td class="num">24</td><td>Componentes Angular</td></tr>
+  <tr><th scope="row">Total</th><td class="num"><b>192</b></td><td></td></tr></tbody></table>
+ <p class="nota">Ainda não instalados: fast-check (propriedade), axe-core, k6, medição de cobertura ≥ 80 %, ESLint e gitleaks <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="IA generativa (Bedrock)">
+ <h2>IA generativa com responsabilidade <span class="selo s-crit">Critério 2</span><span class="selo s-crit">Critério 3</span></h2>
+ <div class="grid g2">
+  <div class="card"><h3>Como funciona</h3><ul><li>Amazon Nova Lite (<span class="mono">us.amazon.nova-lite-v1:0</span>) via Converse API</li><li>Temperatura 0,2 · até 300 tokens · prompt de sistema fixo</li><li>Contexto só com campos não sensíveis</li><li>Selo "Gerado por IA" na tela</li></ul></div>
+  <div class="card"><h3>Proteções</h3><ul><li>Expediente sigiloso → 403 sem chamar o modelo</li><li>Falha do modelo → 502 IA_INDISPONIVEL, a tela segue funcionando</li><li>IAM: InvokeModel só neste modelo, só nesta Lambda</li><li>Bedrock Guardrails (conteúdo + PII) <span class="selo s-plan">Planejado</span></li></ul></div>
+ </div>
+ <p>Custo: cerca de US$ 0,00016 por resumo (1.500 tokens de entrada + 300 de saída).</p>
+</section>
+
+<section class="slide" data-titulo="Observabilidade">
+ <h2>Observabilidade e auditoria</h2>
+ <ul><li><span class="selo s-impl">Implementado</span> Powertools Logger com lista branca de campos, 5 log groups com retenção de 30 dias, métricas do stage do API Gateway, correlationId em toda resposta de erro.</li>
+ <li><span class="selo s-plan">Planejado</span> ObservabilidadeStack: dashboard CloudWatch, alarmes de erro 5xx e latência, métricas EMF, trilha de auditoria em <span class="mono">/painel-expedientes/auditoria</span>.</li></ul>
+</section>
+
+<section class="slide" data-titulo="Inovação e Kiro">
+ <h2>Inovação e uso do Kiro <span class="selo s-crit">Critério 3</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Specs</h3><p>Requisitos (36, com critérios de aceitação), design e tarefas em <span class="mono">.kiro/specs/hackathon-expedientes</span>, todos em português. Tarefas obrigatórias concluídas.</p></div>
+  <div class="card"><h3>Steering</h3><p>tech, structure, documentação e aws-profile fixam stack, convenções, segurança e o profile da conta em todo o código gerado.</p></div>
+  <div class="card"><h3>Produto</h3><p>Prioridade 0–100, sinais de risco, três visões da fila e IA que nunca vê dado sigiloso.</p></div>
+ </div>
+ <p class="nota">Hooks do Kiro (ex.: rodar testes e gitleaks ao salvar) <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="Custos (calculadora)" data-roteiro="1">
+ <h2>Estimativa de custos de infraestrutura · us-east-1 <span class="selo s-crit">Critério 6</span></h2>
+ <div class="calc-ctrl">
+  <label for="cen">Cenário<select id="cen"><option value="demo">Demo do hackathon</option><option value="piloto">Piloto (1 unidade)</option><option value="prod">Produção (MPF nacional)</option></select></label>
+  <label for="ft">Faixa gratuita<select id="ft"><option value="0">Sem faixa gratuita</option><option value="1">Só "sempre gratuito"</option><option value="2">+ 12 meses (contas antigas)</option></select></label>
+  <label for="plan"><span>Arquitetura</span><select id="plan"><option value="1">Completa (com planejados)</option><option value="0">Só o que está implantado</option></select></label>
+  <label for="cambio">Câmbio R$/US$<input id="cambio" type="number" step="0.01" min="1" value="5.50" style="width:90px"></label>
+ </div>
+ <div class="calc-ctrl" id="premissas">
+  <label for="pU">Usuários ativos<input id="pU" type="number" min="1" style="width:90px"></label>
+  <label for="pR">Req./usuário/dia<input id="pR" type="number" min="1" style="width:80px"></label>
+  <label for="pD">Dias úteis/mês<input id="pD" type="number" min="1" max="31" style="width:70px"></label>
+  <label for="pMs">Duração Lambda (ms)<input id="pMs" type="number" min="1" style="width:80px"></label>
+  <label for="pIA">Resumos IA/dia<input id="pIA" type="number" min="0" style="width:90px"></label>
+  <label for="pE">E-mails/dia<input id="pE" type="number" min="0" style="width:80px"></label>
+  <label for="pL">Logs GB/mês<input id="pL" type="number" min="0" style="width:70px"></label>
+  <label for="pG">DynamoDB GB<input id="pG" type="number" min="0" step="0.01" style="width:70px"></label>
+ </div>
+ <div class="grid g4" style="margin-bottom:10px" aria-live="polite">
+  <div class="card">Total mensal (USD)<span class="total" id="totUsd">—</span></div>
+  <div class="card">Total mensal (BRL)<span class="total" id="totBrl">—</span></div>
+  <div class="card">Total anual (USD)<span class="total" id="anoUsd">—</span></div>
+  <div class="card">Total anual (BRL)<span class="total" id="anoBrl">—</span></div>
+ </div>
+ <table><caption id="capCalc">Custo por serviço</caption><thead><tr><th scope="col">Serviço</th><th scope="col">Cálculo</th><th scope="col">Status</th><th scope="col" class="num">USD/mês</th><th scope="col">Participação</th></tr></thead><tbody id="tbCalc"></tbody></table>
+ <details style="margin-top:10px"><summary>Preços unitários usados (sob demanda, us-east-1, consultados em 07/10/2026)</summary>
+  <table><caption>Preços unitários e faixas gratuitas</caption><thead><tr><th scope="col">Serviço</th><th scope="col">Preço</th><th scope="col">Faixa gratuita</th><th scope="col">Fonte</th></tr></thead><tbody>
+  <tr><td>Lambda arm64</td><td>US$ 0,20/milhão req + US$ 0,0000133334/GB-s</td><td>1 M req + 400 mil GB-s/mês (sempre)</td><td><a href="https://aws.amazon.com/lambda/pricing/">aws.amazon.com/lambda/pricing</a></td></tr>
+  <tr><td>API Gateway REST</td><td>US$ 3,50/milhão (até 333 M)</td><td>1 M/mês por 12 meses</td><td><a href="https://aws.amazon.com/api-gateway/pricing/">aws.amazon.com/api-gateway/pricing</a></td></tr>
+  <tr><td>DynamoDB on-demand</td><td>US$ 0,125/milhão RRU · US$ 0,625/milhão WRU · US$ 0,25/GB-mês · PITR US$ 0,20/GB-mês</td><td>25 GB de armazenamento</td><td><a href="https://aws.amazon.com/dynamodb/pricing/on-demand/">aws.amazon.com/dynamodb/pricing/on-demand</a></td></tr>
+  <tr><td>S3 Standard</td><td>US$ 0,023/GB-mês · GET US$ 0,0004/1.000</td><td>5 GB por 12 meses</td><td><a href="https://aws.amazon.com/s3/pricing/">aws.amazon.com/s3/pricing</a></td></tr>
+  <tr><td>CloudFront</td><td>US$ 0,085/GB · US$ 0,01/10.000 req HTTPS</td><td>1 TB + 10 M req/mês (sempre)</td><td><a href="https://aws.amazon.com/cloudfront/pricing/">aws.amazon.com/cloudfront/pricing</a></td></tr>
+  <tr><td>Cognito Essentials</td><td>US$ 0,015/MAU</td><td>10.000 MAU</td><td><a href="https://aws.amazon.com/cognito/pricing/">aws.amazon.com/cognito/pricing</a></td></tr>
+  <tr><td>EventBridge Scheduler</td><td>US$ 1,00/milhão de invocações</td><td>14 M/mês</td><td><a href="https://aws.amazon.com/eventbridge/pricing/">aws.amazon.com/eventbridge/pricing</a></td></tr>
+  <tr><td>SES</td><td>US$ 0,10/1.000 e-mails</td><td>3.000/mês por 12 meses</td><td><a href="https://aws.amazon.com/ses/pricing/">aws.amazon.com/ses/pricing</a></td></tr>
+  <tr><td>Bedrock Nova Lite</td><td>US$ 0,00006/1K tokens entrada · US$ 0,00024/1K saída</td><td>—</td><td><a href="https://aws.amazon.com/bedrock/pricing/">aws.amazon.com/bedrock/pricing</a></td></tr>
+  <tr><td>Bedrock Guardrails</td><td>Conteúdo US$ 0,15 + PII US$ 0,10 por 1.000 unidades de texto</td><td>—</td><td><a href="https://aws.amazon.com/about-aws/whats-new/2024/12/amazon-bedrock-guardrails-reduces-pricing-85-percent/">anúncio AWS 12/2024</a></td></tr>
+  <tr><td>CloudWatch</td><td>Logs US$ 0,50/GB + US$ 0,03/GB-mês · métrica US$ 0,30 · dashboard US$ 3 · alarme US$ 0,10</td><td>5 GB, 10 métricas, 3 dashboards, 10 alarmes</td><td><a href="https://aws.amazon.com/cloudwatch/pricing/">aws.amazon.com/cloudwatch/pricing</a></td></tr>
+  <tr><td>Transferência de saída</td><td>US$ 0,09/GB</td><td>100 GB/mês</td><td><a href="https://aws.amazon.com/ec2/pricing/on-demand/">aws.amazon.com/ec2/pricing/on-demand</a></td></tr>
+  </tbody></table>
+  <p class="nota">Contas criadas desde 15/07/2025 recebem créditos em vez da faixa de 12 meses (<a href="https://aws.amazon.com/about-aws/whats-new/2025/07/aws-free-tier-credits-month-free-plan">anúncio AWS</a>). Valores são estimativas; confira no <a href="https://calculator.aws/">AWS Pricing Calculator</a>. Não inclui impostos.</p>
+ </details>
+</section>
+
+<section class="slide" data-titulo="Serverless × servidor ligado">
+ <h2>Serverless × servidor sempre ligado <span class="selo s-crit">Critério 6</span></h2>
+ <table><caption>Referência on-demand us-east-1 (USD/mês, 730 h)</caption><thead><tr><th scope="col">Opção</th><th scope="col">Composição</th><th scope="col" class="num">USD/mês</th></tr></thead><tbody>
+  <tr><td>Serverless (este projeto) · demo</td><td>Lambda + API GW + DynamoDB + Cognito + CloudFront/S3 + Bedrock</td><td class="num">≈ 2,29 a 9,87</td></tr>
+  <tr><td>Serverless · piloto</td><td>idem, 300 usuários</td><td class="num">≈ 19 a 30</td></tr>
+  <tr><td>Serverless · produção nacional</td><td>idem, 12.000 usuários</td><td class="num">≈ 661 a 856</td></tr>
+  <tr><td>Servidor mínimo (ocioso também paga)</td><td>EC2 t4g.small + EBS 20 GB gp3 + ALB + RDS PostgreSQL db.t4g.micro 20 GB</td><td class="num">≈ 50</td></tr>
+  <tr><td>Servidor com alta disponibilidade</td><td>2× t4g.medium + ALB + RDS db.t4g.medium Multi-AZ 100 GB + NAT Gateway</td><td class="num">≈ 250 (só computação/dados)</td></tr></tbody></table>
+ <p>Na demo e no piloto o serverless custa uma fração do servidor. Na escala nacional os valores se aproximam, mas sem servidor para corrigir, escalar ou pagar parado, e com escala automática nos picos.</p>
+</section>
+
+<section class="slide" data-titulo="Roadmap MVP → produção" data-roteiro="1">
+ <h2>Do MVP à produção <span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Feito (MVP)</h3><ul><li>Início, painel 3 visões, detalhe, resumo IA</li><li>4 stacks CDK, 77 recursos</li><li>192 testes</li></ul><span class="selo s-impl">Implementado</span></div>
+  <div class="card"><h3>Próximo</h3><ul><li>AgendamentosStack: alertas 07:00 + e-mail SES</li><li>ObservabilidadeStack: dashboard, alarmes, auditoria</li><li>Ações em lote (≤ 50 síncrono, 51–200 assíncrono)</li><li>Guardrails, JSON Schema, usage plan</li></ul><span class="selo s-plan">Planejado</span></div>
+  <div class="card"><h3>Produção</h3><ul><li>Domínio próprio com TLS 1.2 e CSP</li><li>Integração com a base real do Único</li><li>fast-check, axe-core, k6, gitleaks no CI</li><li>WAF e KMS dedicada, se a equipe decidir</li></ul><span class="selo s-plan">Futuro</span></div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Encerramento e perguntas" data-roteiro="1">
+ <h2>Obrigado</h2>
+ <p style="font-size:22px">Uma fila priorizada, segura e barata, pronta para crescer com o Único.</p>
+ <div class="grid g2">
+  <div class="card"><h3>Perguntas frequentes</h3><dl>
+   <dt><b>E se a IA errar?</b></dt><dd>O resumo é apoio, com selo "Gerado por IA". Nunca vê dado sigiloso e a tela funciona sem ele.</dd>
+   <dt><b>Quanto custa?</b></dt><dd>Cerca de US$ 2,29/mês na demo; US$ 661 a 856/mês na escala nacional (slide 16).</dd>
+   <dt><b>Como garantem o sigilo?</b></dt><dd>Autorização no backend, por setor e nível, com negação por padrão e testes.</dd>
+   <dt><b>Por que serverless?</b></dt><dd>Sem servidor para manter, escala automática e custo proporcional ao uso.</dd></dl></div>
+  <div class="card"><h3>Acesse</h3><p class="mono">https://d1rlsn9g5sqwu6.cloudfront.net/</p><p>Usuários de demo: GABSUB3-DVT-U02 (CHEFE) e GABSUB3-DVT-U03 (SERVIDOR).</p></div>
+ </div>
+</section>
+
+<!--MAIS-SLIDES-->
+
+</main>
+<footer class="nav">
+ <button id="btAnt" type="button" aria-label="Slide anterior">← Anterior</button>
+ <span id="contador" aria-hidden="true">1 / 1</span>
+ <button id="btProx" type="button" class="prim" aria-label="Próximo slide">Próximo →</button>
+</footer>
+<script>
+var MATRIZ=[
+['1 · Requisitos','Funcionalidades do caso de uso','F1 início, F3 painel 3 visões, F4 detalhe+histórico, F5 resumo IA; F6–F10 no roadmap','parc',3],
+['1 · Requisitos','Fluxo ponta a ponta','Login Cognito → início → painel → detalhe → resumo, implantado na AWS','impl',3],
+['1 · Requisitos','Entradas e saídas','API JSON; erros {codigo, mensagem, correlationId}; filtros validados por lista branca','impl',8],
+['1 · Requisitos','Qualidade do output','RN1–RN3 (prazo, prioridade, ordenação) testadas contra o seed','impl',12],
+['1 · Requisitos','Uso dos dados sintéticos','itens.json do kit carregado como está: 49.108 itens (BatchWriteItem de 25)','impl',8],
+['2 · Arquitetura','Serverless','5 Lambdas nodejs24.x arm64, API Gateway REST, DynamoDB on-demand','impl',6],
+['2 · Arquitetura','Orientação a eventos','EventBridge Scheduler (07:00 e 15 min) e lote assíncrono','plan',18],
+['2 · Arquitetura','Serviços gerenciados','Cognito, CloudFront, S3, DynamoDB, Bedrock, CloudWatch Logs','impl',7],
+['2 · Arquitetura','Infraestrutura como código','AWS CDK v2 2.272.0 em TypeScript, 4 stacks, 77 recursos, 28 testes de assertions','impl',7],
+['2 · Arquitetura','Desacoplamento','Monorepo dominio / contratos / api / web / infra / scripts; domínio sem AWS','impl',8],
+['2 · Arquitetura','IA generativa (Bedrock)','Nova Lite via Converse; Guardrails planejado','parc',13],
+['3 · Inovação','Abordagem do problema','Pontuação de prioridade 0–100 e sinais de risco','impl',3],
+['3 · Inovação','AWS + Kiro','Spec Kiro (36 requisitos, design, tarefas) guiou o código e a infra','impl',15],
+['3 · Inovação','Specs, hooks e steering','Specs e steering (tech, aws-profile, documentação); hooks planejados','parc',15],
+['3 · Inovação','UX/UI','Visões lista, quadro e radar no padrão visual do Único','impl',3],
+['3 · Inovação','Diferenciais','IA com sigilo barrado antes do modelo; selo "Gerado por IA"','impl',13],
+['4 · Segurança','Autenticação','Cognito sem auto cadastro, senha ≥ 12, PKCE, revogação de token','impl',9],
+['4 · Segurança','Autorização','Authorizer nas 5 rotas; matriz como dados, negação por padrão; outro setor → 404','impl',9],
+['4 · Segurança','Menor privilégio','1 role por Lambda; só GetItem/Query/InvokeModel com ARNs exatos; teste CDK "sem *"','impl',9],
+['4 · Segurança','Validação de entrada','Listas brancas, limite 1–100, cursor validado; JSON Schema no API GW planejado','parc',9],
+['4 · Segurança','Dados sensíveis','mascararSigilo; logger com 9 campos permitidos; nada sigiloso no prompt','impl',9],
+['4 · Segurança','HTTPS e criptografia / LGPD','HTTPS-only, OAC, SSE-S3, enforceSSL, DynamoDB criptografado; base 100% sintética','impl',9],
+['5 · Apresentação','Estrutura','Roteiro de 8 slides marcados com ★','impl',1],
+['5 · Apresentação','Demonstração','Demo ao vivo na URL do CloudFront','impl',3],
+['5 · Apresentação','Clareza da arquitetura','Diagrama interativo com detalhes por componente','impl',6],
+['5 · Apresentação','Tempo','Cronômetro de 5:00 (tecla T)','impl',1],
+['5 · Apresentação','Perguntas','FAQ no encerramento','impl',19],
+['6 · Viabilidade','Caminho para produção','Roadmap com o que falta (agendamentos, observabilidade, lote)','impl',18],
+['6 · Viabilidade','Escalabilidade','On-demand, sem Scan, GSI1/GSI2, throttling 50 rps / burst 100','impl',10],
+['6 · Viabilidade','Custo','Calculadora com 3 cenários e comparação com servidor ligado','impl',16],
+['6 · Viabilidade','Reuso','packages/dominio puro, reutilizável em outros módulos do Único','impl',8],
+['6 · Viabilidade','Manutenibilidade','192 testes (Vitest), TypeScript ponta a ponta, handlers enxutos','impl',12]];
+var ROT={impl:['s-impl','Implementado'],parc:['s-parc','Parcial'],plan:['s-plan','Planejado']};
+(function(){
+ var slides=[].slice.call(document.querySelectorAll('section.slide'));
+ var atual=0,N=slides.length;
+ var prog=document.querySelector('.progresso');prog.setAttribute('aria-valuemax',N);
+ var lista=document.getElementById('listaSum');
+ slides.forEach(function(s,i){s.id='slide-'+(i+1);s.setAttribute('aria-label','Slide '+(i+1)+': '+s.dataset.titulo);
+  var li=document.createElement('li');var b=document.createElement('button');b.type='button';
+  b.textContent=s.dataset.titulo+(s.dataset.roteiro?' ★':'');b.onclick=function(){ir(i,true);abrirSum(false);};li.appendChild(b);lista.appendChild(li);});
+ function ir(i,push){if(i<0||i>=N)return;slides[atual].classList.remove('ativo');atual=i;var s=slides[i];s.classList.add('ativo');s.scrollTop=0;
+  document.getElementById('contador').textContent=(i+1)+' / '+N;document.getElementById('barraProg').style.width=((i+1)/N*100)+'%';
+  prog.setAttribute('aria-valuenow',i+1);document.getElementById('anuncio').textContent='Slide '+(i+1)+' de '+N+': '+s.dataset.titulo;
+  if(push&&location.hash!=='#slide-'+(i+1))history.pushState(null,'','#slide-'+(i+1));
+  document.dispatchEvent(new CustomEvent('slide',{detail:s}));}
+ function deHash(){var m=/slide-(\d+)/.exec(location.hash);ir(m?Math.min(N,Math.max(1,+m[1]))-1:0,false);}
+ window.addEventListener('hashchange',deHash);
+ document.getElementById('btAnt').onclick=function(){ir(atual-1,true)};
+ document.getElementById('btProx').onclick=function(){ir(atual+1,true)};
+ var sum=document.getElementById('sumario'),btSum=document.getElementById('btSum');
+ function abrirSum(v){sum.classList.toggle('aberto',v);btSum.setAttribute('aria-expanded',v);}
+ btSum.onclick=function(){abrirSum(!sum.classList.contains('aberto'))};
+ function full(){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();else document.exitFullscreen();}
+ document.getElementById('btFull').onclick=full;
+ var seg=300,tm=null,cr=document.getElementById('crono');
+ function crono(){if(tm){clearInterval(tm);tm=null;return;}tm=setInterval(function(){seg--;var a=Math.abs(seg);cr.textContent=(seg<0?'-':'')+Math.floor(a/60)+':'+('0'+a%60).slice(-2);cr.classList.toggle('alerta',seg<=60);},1000);}
+ document.getElementById('btCrono').onclick=crono;
+ document.addEventListener('keydown',function(e){var t=e.target.tagName;if(/INPUT|SELECT|TEXTAREA/.test(t))return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'){ir(atual+1,true);e.preventDefault();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ir(atual-1,true);e.preventDefault();}
+  else if(e.key==='Home'){ir(0,true);}else if(e.key==='End'){ir(N-1,true);}
+  else if(e.key==='f'||e.key==='F'){full();}else if(e.key==='s'||e.key==='S'){abrirSum(!sum.classList.contains('aberto'));}
+  else if(e.key==='t'||e.key==='T'){crono();}});
+ // abas
+ [].forEach.call(document.querySelectorAll('[role=tablist]'),function(tl){var tabs=[].slice.call(tl.querySelectorAll('[role=tab]'));
+  function sel(k){tabs.forEach(function(t,j){var on=j===k;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;document.getElementById(t.getAttribute('aria-controls')).hidden=!on;});tabs[k].focus();}
+  tabs.forEach(function(t,j){t.onclick=function(){sel(j)};t.onkeydown=function(e){if(e.key==='ArrowRight'){sel((j+1)%tabs.length);e.preventDefault();e.stopPropagation();}if(e.key==='ArrowLeft'){sel((j-1+tabs.length)%tabs.length);e.preventDefault();e.stopPropagation();}};});});
+ deHash();
+})();
+(function(){
+ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});}
+ window.esc=esc;
+ var h='<table><caption>Critérios × evidências (status e slide de referência)</caption><thead><tr><th id="mc">Critério</th><th id="mi">Item avaliado</th><th id="me">Evidência no projeto</th><th id="ms">Status</th><th id="mr">Slide</th></tr></thead><tbody>';
+ MATRIZ.forEach(function(r){h+='<tr><td headers="mc">'+esc(r[0])+'</td><td headers="mi">'+esc(r[1])+'</td><td headers="me">'+esc(r[2])+'</td><td headers="ms"><span class="selo '+ROT[r[3]][0]+'">'+ROT[r[3]][1]+'</span></td><td headers="mr"><a href="#slide-'+r[4]+'">'+r[4]+'</a></td></tr>';});
+ document.getElementById('matriz').innerHTML=h+'</tbody></table>';
+})();
+(function(){
+ var NS='http://www.w3.org/2000/svg';
+ var GR=[
+  ['WebStack · 14 recursos',160,40,250,190,'#1d3c87',0],['AuthStack · 3 recursos',160,260,250,100,'#1f6b4a',0],
+  ['ApiStack · 59 recursos',440,40,360,420,'#1b3470',0],['DadosStack · 1 recurso',830,40,250,120,'#8a5300',0],
+  ['Amazon Bedrock (gerenciado)',830,190,250,170,'#6b3fa0',0],['ObservabilidadeStack (planejada)',160,480,250,140,'#5b6070',1],
+  ['AgendamentosStack (planejada)',440,480,640,140,'#5b6070',1]];
+ var NOS={
+  usr:{x:20,y:270,w:120,h:56,t:'Usuário',s:'Navegador (SPA)',st:'—',papel:'Membro, chefe ou servidor do gabinete acessando pelo navegador.',cfg:['Usuários fictícios de usuarios.csv (14)','Perfis MEMBRO / CHEFE / SERVIDOR'],c:null},
+  cf:{x:180,y:70,w:210,h:56,t:'Amazon CloudFront',s:'CDN · HTTPS · OAC',st:'WebStack',papel:'Entrega a SPA Angular 22 com HTTPS e headers de segurança.',cfg:['HTTP/2 e HTTP/3, IPv6, compressão','Viewer protocol: redirect-to-https','Cache policy CachingOptimized','Response headers policy SecurityHeadersPolicy (gerenciada)','Erros 403/404 → /index.html (rotas da SPA)','Origin Access Control SigV4 (always)','TLS 1.2 no código; sem domínio próprio usa o certificado padrão *.cloudfront.net'],iam:'Só o CloudFront (via OAC) lê o bucket.',c:'cloudfront'},
+  s3:{x:180,y:150,w:210,h:56,t:'Amazon S3',s:'Bucket privado da SPA',st:'WebStack',papel:'Guarda os estáticos do build de produção do Angular.',cfg:['Block Public Access total','Criptografia SSE-S3 (AES256)','enforceSSL na bucket policy','Implantação por Custom::CDKBucketDeployment (Lambda python3.13 arm64 1024 MB) + AwsCliLayer','Custom::S3AutoDeleteObjects (Lambda nodejs24.x 128 MB) para destruir o ambiente'],iam:'BucketPolicy: s3:GetObject só para o principal cloudfront.amazonaws.com com SourceArn da distribuição.',c:'s3'},
+  cog:{x:180,y:290,w:210,h:56,t:'Amazon Cognito',s:'User Pool · Hosted UI · PKCE',st:'AuthStack',papel:'Autentica os usuários e emite o ID token com setor e perfil.',cfg:['User Pool painel-expedientes-dev: só o admin cria usuários','Senha ≥ 12 com maiúscula, minúscula e dígito','Atributos imutáveis custom:idUsuario, custom:siglaSetor, custom:perfil','App Client SPA sem segredo, authorization code + PKCE','Escopos openid, email, profile; tokens de 60 min, refresh 12 h, revogação ligada','UserPoolDomain (Hosted UI)'],iam:'Sem permissões IAM; o API Gateway valida o token.',c:'cognito'},
+  apigw:{x:460,y:70,w:150,h:70,t:'API Gateway REST',s:'/api/v1 · stage dev',st:'ApiStack',papel:'Porta de entrada autenticada da API.',cfg:['REST API REGIONAL painel-expedientes-dev','Cognito Authorizer (cache 300 s) nas 5 rotas de negócio','Throttling 50 rps, burst 100','CORS restrito: localhost:4200 e o domínio do CloudFront (8 métodos OPTIONS)','5 Gateway Responses (401, 403, 429, 4xx, 5xx) com correlationId','7 resources, 13 methods, 10 Lambda::Permission'],iam:'Lambda::Permission por rota (invocação só pelo próprio API).',c:'apigw'},
+  fme:{x:630,y:60,w:150,h:50,t:'λ FnMe',s:'GET /me',st:'ApiStack',lam:1,iamTxt:'dynamodb:GetItem na tabela Expedientes'},
+  fhome:{x:630,y:125,w:150,h:50,t:'λ FnHome',s:'GET /home',st:'ApiStack',lam:1,iamTxt:'dynamodb:Query e GetItem na tabela; Query no índice GSI2'},
+  flist:{x:630,y:190,w:150,h:50,t:'λ FnListarExpedientes',s:'GET /expedientes',st:'ApiStack',lam:1,iamTxt:'dynamodb:Query no índice GSI1 (filtros caixa, gerenciador, statusPrazo; limite 1–100; cursor)'},
+  fdet:{x:630,y:255,w:150,h:50,t:'λ FnDetalhe',s:'GET /expedientes/{id}',st:'ApiStack',lam:1,iamTxt:'dynamodb:Query na tabela (expediente + histórico + prazos)'},
+  fres:{x:630,y:320,w:150,h:50,t:'λ FnResumo',s:'POST …/{id}/resumo',st:'ApiStack',lam:1,to:15,iamTxt:'dynamodb:Query na tabela; bedrock:InvokeModel só no inference profile us.amazon.nova-lite-v1:0 e no foundation model amazon.nova-lite-v1:0'},
+  cw:{x:460,y:380,w:150,h:56,t:'CloudWatch Logs',s:'5 grupos · 30 dias',st:'ApiStack',papel:'Logs estruturados das Lambdas (Powertools Logger).',cfg:['1 LogGroup por função, retenção 30 dias','Lista branca de 9 campos (idUsuario, idExpediente, rota, status, latência, correlationId…)','Sem dados sensíveis nos logs'],iam:'AWSLambdaBasicExecutionRole em cada role.',c:'cloudwatch'},
+  ddb:{x:850,y:72,w:210,h:70,t:'Amazon DynamoDB',s:'Tabela única Expedientes',st:'DadosStack',papel:'Expedientes, histórico, prazos, contadores, notificações e preferências.',cfg:['PK/SK String + GSI1 (GSI1PK/GSI1SK) e GSI2 (GSI2PK/GSI2SK), projeção ALL','Capacidade on-demand (PAY_PER_REQUEST)','Point-in-time recovery ligado','TTL no atributo expiraEm','Criptografia padrão gerenciada pela AWS','49.108 itens do seed; nenhuma rota usa Scan (o IAM nem concede)'],iam:'Cada Lambda recebe só GetItem/Query com o ARN exato da tabela ou índice.',c:'dynamodb'},
+  nova:{x:850,y:220,w:210,h:56,t:'Amazon Nova Lite',s:'Converse API',st:'Bedrock',papel:'Gera o resumo do expediente.',cfg:['Modelo us.amazon.nova-lite-v1:0 (inference profile)','maxTokens 300, temperatura 0,2, prompt de sistema fixo','Contexto só com campos não sensíveis; sigiloso → 403 sem chamar o modelo','Falha → 502 IA_INDISPONIVEL; selo "Gerado por IA"'],iam:'bedrock:InvokeModel só na FnResumo.',c:'bedrock'},
+  guard:{x:850,y:290,w:210,h:56,t:'Bedrock Guardrails',s:'filtro de conteúdo + PII',st:'Bedrock',plan:1,papel:'Camada extra de proteção na entrada e na saída do modelo.',cfg:['Filtro de conteúdo e PII (planejado)'],iam:'bedrock:ApplyGuardrail (planejado).',c:'guardrails'},
+  dash:{x:180,y:520,w:210,h:70,t:'Dashboard + alarmes',s:'métricas EMF · auditoria',st:'ObservabilidadeStack',plan:1,papel:'Visão operacional e trilha de auditoria.',cfg:['Dashboard CloudWatch, alarmes simples','Métricas EMF (Powertools Metrics)','Grupo /painel-expedientes/auditoria'],iam:'—',c:'obs'},
+  sch:{x:460,y:520,w:140,h:70,t:'EventBridge Scheduler',s:'07:00 diário · a cada 15 min',st:'AgendamentosStack',plan:1,papel:'Dispara a rotina diária e a reconciliação de contadores.',cfg:['cron 07:00 (America/Sao_Paulo)','rate(15 minutes) para reconciliação'],iam:'Role do Scheduler com lambda:InvokeFunction exato.',c:'scheduler'},
+  rot:{x:620,y:520,w:140,h:70,t:'λ Rotina diária',s:'alertas + reconciliação',st:'AgendamentosStack',plan:1,papel:'Calcula alertas de prazo, monta o resumo e reconcilia contadores CONT#.',cfg:['nodejs24.x arm64'],iam:'Query na tabela + ses:SendEmail.',c:'lambda'},
+  ses:{x:780,y:520,w:130,h:70,t:'Amazon SES',s:'resumo por e-mail (RF16)',st:'AgendamentosStack',plan:1,papel:'Envia o resumo diário sem dados sigilosos.',cfg:['Identidade verificada (sandbox)'],iam:'—',c:'ses'},
+  lote:{x:930,y:520,w:130,h:70,t:'λ Lote assíncrono',s:'51–200 itens → 202',st:'ApiStack (futuro)',plan:1,papel:'Ações em lote: ≤ 50 síncrono; 51–200 responde HTTP 202 e segue por invocação assíncrona com retentativa nativa.',cfg:['TransactWriteItems com versao condicional','Idempotency-Key'],iam:'UpdateItem/TransactWrite com ARN exato.',c:'lambda'}};
+ ['fme','fhome','flist','fdet','fres'].forEach(function(k){var n=NOS[k];n.papel='Handler enxuto: valida entrada → autorizar → repositório → mascararSigilo → responde.';
+  n.cfg=['Runtime nodejs24.x, arquitetura arm64','Memória 1024 MB, timeout '+(n.to||10)+' s','esbuild (CJS minificado), AWS SDK v3 empacotado','Env: DATA_REFERENCIA, NOME_TABELA, ORIGENS_PERMITIDAS, POWERTOOLS_SERVICE_NAME=painel-api','Role própria + AWSLambdaBasicExecutionRole + LogGroup 30 dias'];n.iam=n.iamTxt;n.c='lambda';});
+ var SETAS=[['usr','cf'],['cf','s3'],['usr','cog'],['usr','apigw'],['cog','apigw'],['apigw','fme'],['apigw','fhome'],['apigw','flist'],['apigw','fdet'],['apigw','fres'],
+  ['fme','ddb'],['fhome','ddb'],['flist','ddb'],['fdet','ddb'],['fres','ddb'],['fres','nova'],['fres','guard',1],['apigw','cw'],
+  ['sch','rot',1],['rot','ses',1],['rot','ddb',1],['apigw','lote',1],['lote','ddb',1],['cw','dash',1]];
+ var FLUXOS=[
+  [['O usuário abre a SPA pelo CloudFront (HTTPS)',['usr','cf'],[0]],['O CloudFront lê o index.html do S3 privado via OAC',['cf','s3'],[1]],['Login na Hosted UI do Cognito com PKCE; recebe o ID token com setor e perfil',['usr','cog'],[2]]],
+  [['A SPA chama GET /expedientes com o ID token',['usr','apigw'],[3]],['O Cognito Authorizer valida o token (cache 300 s)',['cog','apigw'],[4]],['A Lambda aplica autorizar (setor e sigilo) e consulta o GSI1',['apigw','flist'],[7]],['DynamoDB devolve a página ordenada por prioridade, sem Scan',['flist','ddb'],[12]]],
+  [['POST /expedientes/{id}/resumo',['usr','apigw','fres'],[3,9]],['Lê o expediente; se for sigiloso responde 403 sem chamar o modelo',['fres','ddb'],[14]],['Envia só campos não sensíveis ao Nova Lite (Converse)',['fres','nova'],[15]],['Guardrails filtraria entrada e saída (planejado)',['guard'],[16]]],
+  [['Lote de 51 a 200 itens: o API responde HTTP 202',['apigw','lote'],[21]],['A Lambda de lote grava com TransactWriteItems e versao condicional',['lote','ddb'],[22]]],
+  [['07:00: o EventBridge Scheduler dispara a rotina',['sch','rot'],[18]],['A rotina lê prazos e contadores no DynamoDB',['rot','ddb'],[20]],['O SES envia o resumo do dia por e-mail',['rot','ses'],[19]]]];
+ function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+ var gG=document.getElementById('gGrupos'),gS=document.getElementById('gSetas'),gN=document.getElementById('gNos');
+ GR.forEach(function(g){var gg=el('g',{'class':'grupo'},gG);el('rect',{x:g[1],y:g[2],width:g[3],height:g[4],rx:8,stroke:g[5],'stroke-dasharray':g[6]?'8 5':'none'},gg);var t=el('text',{x:g[1]+10,y:g[2]+18,fill:g[5]},gg);t.textContent=g[0];});
+ function pt(a,b){var ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2;
+  if(b.x>=a.x+a.w)return[a.x+a.w,ay,b.x,by];if(b.x+b.w<=a.x)return[a.x,ay,b.x+b.w,by];
+  if(by>ay)return[ax,a.y+a.h,bx,b.y];return[ax,a.y,bx,b.y+b.h];}
+ var setasEl=SETAS.map(function(s){var p=pt(NOS[s[0]],NOS[s[1]]);var mx=(p[0]+p[2])/2;
+  return el('path',{'class':'seta'+(s[2]?' plan':''),d:'M'+p[0]+','+p[1]+' C'+mx+','+p[1]+' '+mx+','+p[3]+' '+p[2]+','+p[3]},gS);});
+ var painel=document.getElementById('painel'),ultimo=null,txt=document.getElementById('diagTexto');
+ Object.keys(NOS).forEach(function(k){var n=NOS[k];var g=el('g',{'class':'node'+(n.plan?' plan':''),tabindex:0,role:'button','aria-label':n.t+' — '+n.s+(n.plan?' (planejado)':''),'data-id':k},gN);
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:6},g);var t=el('text',{x:n.x+8,y:n.y+20,'class':'t'},g);t.textContent=n.t;var s=el('text',{x:n.x+8,y:n.y+38},g);s.textContent=n.s;
+  if(n.plan){var p=el('text',{x:n.x+n.w-8,y:n.y+n.h-6,'text-anchor':'end',fill:'#5b6070','font-size':'10'},g);p.textContent='PLANEJADO';}
+  n.el=g;g.addEventListener('click',function(){abrir(k,g)});g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){abrir(k,g);e.preventDefault();e.stopPropagation();}});
+  var li=document.createElement('li');li.textContent=n.t+' ('+n.st+'): '+(n.papel||'');txt.appendChild(li);});
+ function abrir(k,g){var n=NOS[k];ultimo=g;var c=n.c&&window.custoServico?window.custoServico(n.c):null;
+  var h='<h3>'+esc(n.t)+'</h3><p><span class="selo '+(n.plan?'s-plan">Planejado':'s-impl">Implementado')+'</span><span class="selo s-crit">'+esc(n.st)+'</span></p><p>'+esc(n.papel||'')+'</p><dl><dt>Configuração</dt><dd><ul>'+n.cfg.map(function(x){return'<li>'+esc(x)+'</li>'}).join('')+'</ul></dd>';
+  if(n.iam)h+='<dt>IAM / acesso</dt><dd>'+esc(n.iam)+'</dd>';
+  if(c)h+='<dt>Custo estimado ('+esc(c.cen)+')</dt><dd>'+esc(c.txt)+'</dd>';
+  h+='</dl><button type="button" id="fecharPainel">Fechar (Esc)</button>';painel.innerHTML=h;
+  document.getElementById('fecharPainel').onclick=fechar;painel.tabIndex=-1;painel.focus();}
+ function fechar(){painel.innerHTML='<h3>Clique em um componente</h3><p>Tab para navegar, Enter para abrir.</p>';if(ultimo)ultimo.focus();}
+ painel.addEventListener('keydown',function(e){if(e.key==='Escape')fechar();});
+ var timers=[];
+ function limpar(){timers.forEach(clearTimeout);timers=[];Object.keys(NOS).forEach(function(k){NOS[k].el.classList.remove('on')});setasEl.forEach(function(s){s.classList.remove('on')});}
+ var reduz=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ [].forEach.call(document.querySelectorAll('[data-fluxo]'),function(b){b.onclick=function(){limpar();var f=FLUXOS[+b.dataset.fluxo];
+  f.forEach(function(p,i){timers.push(setTimeout(function(){p[1].forEach(function(k){NOS[k].el.classList.add('on')});p[2].forEach(function(j){setasEl[j].classList.add('on')});
+   document.getElementById('passo').textContent='Passo '+(i+1)+' de '+f.length+': '+p[0];},reduz?i*10:i*1600));});};});
+})();
+document.getElementById('filtroInv').addEventListener('change',function(){var v=this.value;[].forEach.call(document.querySelectorAll('#tabInv tbody tr'),function(r){r.hidden=v&&r.dataset.st!==v;});});
+(function(){
+ var CEN={demo:{n:'Demo do hackathon',U:14,R:350,D:30,ms:200,IA:17,E:3,L:1,G:0.05},
+  piloto:{n:'Piloto (1 unidade)',U:300,R:150,D:22,ms:200,IA:300,E:300,L:5,G:0.5},
+  prod:{n:'Produção (MPF nacional)',U:12000,R:150,D:22,ms:150,IA:12000,E:12000,L:60,G:60}};
+ var NOMES={cloudfront:'CloudFront',s3:'S3',cognito:'Cognito',apigw:'API Gateway REST',lambda:'Lambda (arm64)',dynamodb:'DynamoDB',bedrock:'Bedrock Nova Lite',cloudwatch:'CloudWatch Logs',saida:'Transferência de saída (API)',guardrails:'Bedrock Guardrails',scheduler:'EventBridge Scheduler',ses:'SES',obs:'CloudWatch dashboard/alarmes/métricas'};
+ var ultimo={};
+ function $(i){return document.getElementById(i)}
+ function fmt(v,d){return v.toLocaleString('pt-BR',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})}
+ function preencher(){var c=CEN[$('cen').value];$('pU').value=c.U;$('pR').value=c.R;$('pD').value=c.D;$('pMs').value=c.ms;$('pIA').value=c.IA;$('pE').value=c.E;$('pL').value=c.L;$('pG').value=c.G;calc();}
+ function num(i){var v=parseFloat($(i).value);return isFinite(v)&&v>=0?v:0}
+ function calc(){
+  var ft=+$('ft').value,pl=$('plan').value==='1',cx=num('cambio')||5.5;
+  var U=num('pU'),R=num('pR'),D=num('pD'),ms=num('pMs'),IA=num('pIA')*D,E=num('pE')*D,L=num('pL'),G=num('pG');
+  var req=U*R*D,s1=ft>=1,s12=ft>=2,linhas=[];
+  function add(k,v,txt,plan){linhas.push({k:k,v:Math.max(0,v),txt:txt,plan:plan});}
+  // CloudFront: 20 req e 1 MB por sessão/dia
+  var cfReq=U*D*20,cfGB=U*D*1/1024;
+  add('cloudfront',(s1?Math.max(0,cfGB-1024):cfGB)*0.085+(s1?Math.max(0,cfReq-1e7):cfReq)/1e4*0.01,fmt(cfReq,0)+' req · '+fmt(cfGB)+' GB');
+  add('s3',(s12?0:0.01*0.023)+U*D*2*0.0004/1000,'0,01 GB + GETs de origem');
+  add('cognito',(s1?Math.max(0,U-10000):U)*0.015,fmt(U,0)+' MAU × US$ 0,015');
+  add('apigw',(s12?Math.max(0,req-1e6):req)*3.5/1e6,fmt(req,0)+' req × US$ 3,50/M');
+  var ag=pl?2910:0,gbs=req*(1024/1024)*ms/1000+ag*5,inv=req+ag;
+  add('lambda',(s1?Math.max(0,inv-1e6):inv)*0.2/1e6+(s1?Math.max(0,gbs-4e5):gbs)*0.0000133334,fmt(inv,0)+' invoc. · '+fmt(gbs,0)+' GB-s'+(pl?' (inclui agendadas)':''));
+  var wr=pl?req*0.1*12:0,gArm=s1?Math.max(0,G-25):G;
+  add('dynamodb',req*20*0.125/1e6+wr*0.625/1e6+gArm*0.25+G*0.2,fmt(req*20,0)+' RRU'+(pl?' + '+fmt(wr,0)+' WRU':'')+' · '+fmt(G)+' GB + PITR');
+  add('bedrock',IA*(1500*0.00006+300*0.00024)/1000,fmt(IA,0)+' resumos × (1.500 in + 300 out tokens)');
+  add('cloudwatch',(s1?Math.max(0,L-5):L)*0.5+L*0.03,fmt(L)+' GB ingeridos');
+  var egGB=req*8/1024/1024;add('saida',(s1?Math.max(0,egGB-100):egGB)*0.09,fmt(egGB)+' GB (8 KB/resposta)');
+  if(pl){
+   add('guardrails',IA*2*0.25/1000,fmt(IA,0)+' chamadas × 2 unidades',1);
+   add('scheduler',s1?0:ag/1e6,fmt(ag,0)+' invocações/mês',1);
+   add('ses',(s12?Math.max(0,E-3000):E)*0.1/1000,fmt(E,0)+' e-mails',1);
+   add('obs',s1?0:(3+10*0.1+10*0.3),'1 dashboard + 10 alarmes + 10 métricas EMF',1);}
+  var tot=linhas.reduce(function(a,l){return a+l.v},0),max=Math.max.apply(null,linhas.map(function(l){return l.v}))||1;
+  ultimo={};var cen=CEN[$('cen').value].n;
+  $('tbCalc').innerHTML=linhas.map(function(l){ultimo[l.k]={cen:cen,txt:'US$ '+fmt(l.v)+'/mês · '+l.txt};
+   return '<tr><td>'+NOMES[l.k]+'</td><td>'+esc(l.txt)+'</td><td><span class="selo '+(l.plan?'s-plan">Planejado':'s-impl">Implementado')+'</span></td><td class="num">'+fmt(l.v)+'</td><td><span class="barra'+(l.plan?' plan':'')+'" style="width:'+Math.max(1,l.v/max*160)+'px"></span> '+fmt(tot?l.v/tot*100:0,1)+' %</td></tr>';}).join('')
+   +'<tr><th scope="row">Total</th><td colspan="2"></td><td class="num"><b>'+fmt(tot)+'</b></td><td></td></tr>';
+  $('capCalc').textContent='Custo por serviço · '+cen+' · '+$('ft').selectedOptions[0].text+' · '+$('plan').selectedOptions[0].text;
+  $('totUsd').textContent='US$ '+fmt(tot);$('totBrl').textContent='R$ '+fmt(tot*cx);$('anoUsd').textContent='US$ '+fmt(tot*12);$('anoBrl').textContent='R$ '+fmt(tot*12*cx);
+  window.totalCalc=tot;}
+ window.custoServico=function(k){return ultimo[k]||null};
+ $('cen').addEventListener('change',preencher);
+ ['ft','plan','cambio','pU','pR','pD','pMs','pIA','pE','pL','pG'].forEach(function(i){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc);});
+ preencher();
+})();
+/*JS-MAIS*/
+</script>
+</body>
+</html>
