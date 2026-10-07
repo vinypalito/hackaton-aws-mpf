@@ -183,6 +183,125 @@ svg .seta.on{stroke:#c98a00;stroke-width:3}
  <details style="margin-top:8px"><summary>Descrição textual do diagrama</summary><ul id="diagTexto"></ul></details>
 </section>
 
+<section class="slide" data-titulo="Inventário de infraestrutura">
+ <h2>Inventário: 77 recursos em 4 stacks <span class="selo s-crit">Critério 2</span></h2>
+ <p class="nota">Fonte: <span class="mono">app/infra/cdk.out/*.template.json</span> (sem AWS::CDK::Metadata). Tags em todos os recursos: <span class="mono">projeto=painel-expedientes</span>, <span class="mono">ambiente=dev</span>. Região us-east-1. CDK v2 2.272.0.</p>
+ <label style="font-size:14px;font-weight:600">Filtrar por stack
+  <select id="filtroInv"><option value="">Todas</option><option>DadosStack</option><option>AuthStack</option><option>ApiStack</option><option>WebStack</option><option>AgendamentosStack</option><option>ObservabilidadeStack</option></select></label>
+ <table id="tabInv" style="margin-top:8px"><caption>Recursos por stack, tipo e configuração-chave</caption>
+  <thead><tr><th scope="col">Stack</th><th scope="col">Tipo CloudFormation</th><th scope="col" class="num">Qtd.</th><th scope="col">Configuração-chave</th><th scope="col">Status</th></tr></thead>
+  <tbody>
+  <tr data-st="DadosStack"><td>DadosStack</td><td class="mono">AWS::DynamoDB::Table</td><td class="num">1</td><td>Expedientes · PK/SK + GSI1 + GSI2 (ALL) · on-demand · PITR · TTL expiraEm · criptografia AWS</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPool</td><td class="num">1</td><td>Só admin cria · senha ≥ 12 · alias e-mail · custom:idUsuario/siglaSetor/perfil imutáveis · recuperação admin_only</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPoolClient</td><td class="num">1</td><td>SPA sem segredo · code flow + PKCE · SRP · tokens 60 min · refresh 12 h · revogação</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AuthStack"><td>AuthStack</td><td class="mono">AWS::Cognito::UserPoolDomain</td><td class="num">1</td><td>Hosted UI</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::RestApi / Stage / Deployment</td><td class="num">3</td><td>REGIONAL · stage dev · throttling 50 rps / burst 100 · métricas</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::Authorizer</td><td class="num">1</td><td>COGNITO_USER_POOLS · cache 300 s</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::Resource / Method</td><td class="num">7 + 13</td><td>api, v1, me, home, expedientes, {id}, resumo · 5 métodos com Cognito + 8 OPTIONS (CORS restrito)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::ApiGateway::GatewayResponse</td><td class="num">5</td><td>401, 403, 429, 4xx, 5xx com correlationId e CORS</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Lambda::Function</td><td class="num">5</td><td>FnMe, FnHome, FnListarExpedientes, FnDetalheExpediente, FnResumoExpediente · nodejs24.x · arm64 · 1024 MB · 10 s (15 s no resumo)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Lambda::Permission</td><td class="num">10</td><td>Invocação só pelo próprio API Gateway (rota e test-invoke)</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::IAM::Role / Policy</td><td class="num">5 + 5</td><td>1 role por Lambda · GetItem/Query/InvokeModel com ARNs exatos · teste CDK garante "sem *" em dados</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="ApiStack"><td>ApiStack</td><td class="mono">AWS::Logs::LogGroup</td><td class="num">5</td><td>1 por função · retenção 30 dias</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">AWS::S3::Bucket / BucketPolicy</td><td class="num">1 + 1</td><td>Block Public Access · SSE-S3 AES256 · enforceSSL · autoDelete</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">AWS::CloudFront::Distribution / OriginAccessControl</td><td class="num">1 + 1</td><td>HTTP/2+3 · IPv6 · redirect-to-https · CachingOptimized · SecurityHeadersPolicy · OAC SigV4</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">Custom::CDKBucketDeployment + AwsCliLayer + Lambda/Role/Policy</td><td class="num">2 + 2 + 3</td><td>Publica o build Angular · Lambda python3.13 arm64 1024 MB 900 s</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="WebStack"><td>WebStack</td><td class="mono">Custom::S3AutoDeleteObjects + provider Lambda/Role</td><td class="num">1 + 2</td><td>Esvazia o bucket no destroy · nodejs24.x 128 MB</td><td><span class="selo s-impl">Implementado</span></td></tr>
+  <tr data-st="AgendamentosStack"><td>AgendamentosStack</td><td class="mono">AWS::Scheduler::Schedule · Lambda · SES</td><td class="num">—</td><td>07:00 diário (alertas + resumo por e-mail) · reconciliação a cada 15 min</td><td><span class="selo s-plan">Planejado</span></td></tr>
+  <tr data-st="ObservabilidadeStack"><td>ObservabilidadeStack</td><td class="mono">AWS::CloudWatch::Dashboard / Alarm · LogGroup auditoria</td><td class="num">—</td><td>Dashboard, alarmes simples, métricas EMF, /painel-expedientes/auditoria</td><td><span class="selo s-plan">Planejado</span></td></tr>
+  </tbody></table>
+ <p class="nota">Totais por stack: DadosStack 1 · AuthStack 3 · ApiStack 59 · WebStack 14 = 77.</p>
+</section>
+
+<section class="slide" data-titulo="Dados (DynamoDB tabela única)">
+ <h2>Dados: tabela única no DynamoDB <span class="selo s-crit">Critério 1</span><span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g2">
+  <div class="card"><h3>Modelo</h3><table><caption>Chaves</caption><thead><tr><th scope="col">Chave</th><th scope="col">Uso</th></tr></thead><tbody>
+   <tr><td class="mono">PK / SK</td><td>Expediente, movimentações (histórico), prazos, preferências</td></tr>
+   <tr><td class="mono">GSI1</td><td>Fila do setor por caixa/gerenciador, ordenada por prioridade</td></tr>
+   <tr><td class="mono">GSI2</td><td>Contadores CONT# e notificações NOT# do usuário/setor</td></tr></tbody></table></div>
+  <div class="card"><h3>Garantias</h3><ul>
+   <li>Seed do kit carregado como está: 49.108 itens.</li>
+   <li>Todo acesso centralizado em <span class="mono">services/api/repositorio/</span>.</li>
+   <li>Nenhuma rota usa Scan e o IAM nem concede a ação.</li>
+   <li>Só ExpressionAttributeValues (sem concatenação).</li>
+   <li>Regras puras em <span class="mono">packages/dominio</span>, sem AWS.</li>
+   <li>Escritas transacionais com versão condicional <span class="selo s-plan">Planejado</span></li></ul></div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Segurança e LGPD" data-roteiro="1">
+ <h2>Segurança por padrão <span class="selo s-crit">Critério 4</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Identidade</h3><ul><li>Cognito sem auto cadastro</li><li>Senha ≥ 12, PKCE, revogação</li><li>Setor, perfil e usuário só das claims do token</li></ul></div>
+  <div class="card"><h3>Autorização no backend</h3><ul><li>Authorizer nas 5 rotas</li><li><span class="mono">autorizar</span>: matriz como dados, negação por padrão</li><li>Outro setor → 404 (não revela existência)</li><li>Sigilo mascarado antes de responder</li></ul></div>
+  <div class="card"><h3>Menor privilégio</h3><ul><li>1 role por Lambda</li><li>Ações e ARNs exatos, sem "*" em dados</li><li>Testado por assertions do CDK</li></ul></div>
+  <div class="card"><h3>Transporte e repouso</h3><ul><li>HTTPS-only, OAC, enforceSSL</li><li>SSE-S3, DynamoDB criptografado</li><li>Security headers no CloudFront</li></ul></div>
+  <div class="card"><h3>Dados sensíveis</h3><ul><li>Logger com lista branca de 9 campos</li><li>Erros sem stack trace, com correlationId</li><li>Nada sigiloso no prompt da IA</li></ul></div>
+  <div class="card"><h3>LGPD</h3><ul><li>Base 100% sintética</li><li>Script destruir remove o ambiente</li><li>Credenciais fora do repositório</li></ul></div>
+ </div>
+ <p class="nota">Pendências honestas: JSON Schema no API Gateway e usage plan <span class="selo s-plan">Planejado</span>; TLS 1.2 mínimo no código, mas sem domínio próprio o CloudFront usa o certificado padrão.</p>
+</section>
+
+<section class="slide" data-titulo="Escalabilidade e desempenho">
+ <h2>Escalabilidade e desempenho <span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Escala automática</h3><p>Lambda, API Gateway e DynamoDB on-demand escalam sem servidor. Custo zero ocioso (exceto armazenamento).</p></div>
+  <div class="card"><h3>Consultas eficientes</h3><p>Query por GSI com paginação por cursor (limite 1–100). Sem Scan: custo e latência crescem com a página, não com a base.</p></div>
+  <div class="card"><h3>Proteção</h3><p>Throttling 50 rps / burst 100 no stage. arm64 com 1024 MB reduz custo e cold start. esbuild minificado.</p></div>
+ </div>
+ <p>Próximos passos: índice de busca em memória remontado por versão, lote assíncrono 51–200 itens (HTTP 202), teste de carga k6 <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="Acessibilidade (eMAG/WCAG)">
+ <h2>Acessibilidade e responsividade</h2>
+ <ul>
+  <li><span class="mono">lang=pt-BR</span>, link "pular para o conteúdo", título por rota.</li>
+  <li>Tabelas com caption e cabeçalhos; label em todo campo; <span class="mono">aria-live</span> para avisos e <span class="mono">role=alert</span> com correlationId.</li>
+  <li>Botões com <span class="mono">aria-pressed</span>, navegação por teclado, foco visível, prefers-reduced-motion.</li>
+  <li>Contraste ≥ 4,5:1; nenhuma informação só por cor (selos com texto).</li>
+  <li>Cartões abaixo de 768 px, alvos ≥ 24 px, reflow em 320 px.</li>
+ </ul>
+ <p class="nota">Conformidade plena exige teste manual com tecnologias assistivas e revisão especializada. axe-core automatizado está <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="Qualidade e testes">
+ <h2>Qualidade: 192 testes passando</h2>
+ <table style="max-width:640px"><caption>npm test na raiz de app/ (Vitest) · 21 arquivos</caption><thead><tr><th scope="col">Pacote</th><th scope="col" class="num">Testes</th><th scope="col">O que cobre</th></tr></thead><tbody>
+  <tr><td>packages/dominio</td><td class="num">55</td><td>Prazo, prioridade, risco, autorização, máscara</td></tr>
+  <tr><td>services/api</td><td class="num">53</td><td>Handlers, repositório, erros, IA</td></tr>
+  <tr><td>infra (assertions CDK)</td><td class="num">28</td><td>IAM sem "*", criptografia, tags, throttling</td></tr>
+  <tr><td>scripts</td><td class="num">32</td><td>Carga do seed, paridade com o kit</td></tr>
+  <tr><td>web</td><td class="num">24</td><td>Componentes Angular</td></tr>
+  <tr><th scope="row">Total</th><td class="num"><b>192</b></td><td></td></tr></tbody></table>
+ <p class="nota">Ainda não instalados: fast-check (propriedade), axe-core, k6, medição de cobertura ≥ 80 %, ESLint e gitleaks <span class="selo s-plan">Planejado</span></p>
+</section>
+
+<section class="slide" data-titulo="IA generativa (Bedrock)">
+ <h2>IA generativa com responsabilidade <span class="selo s-crit">Critério 2</span><span class="selo s-crit">Critério 3</span></h2>
+ <div class="grid g2">
+  <div class="card"><h3>Como funciona</h3><ul><li>Amazon Nova Lite (<span class="mono">us.amazon.nova-lite-v1:0</span>) via Converse API</li><li>Temperatura 0,2 · até 300 tokens · prompt de sistema fixo</li><li>Contexto só com campos não sensíveis</li><li>Selo "Gerado por IA" na tela</li></ul></div>
+  <div class="card"><h3>Proteções</h3><ul><li>Expediente sigiloso → 403 sem chamar o modelo</li><li>Falha do modelo → 502 IA_INDISPONIVEL, a tela segue funcionando</li><li>IAM: InvokeModel só neste modelo, só nesta Lambda</li><li>Bedrock Guardrails (conteúdo + PII) <span class="selo s-plan">Planejado</span></li></ul></div>
+ </div>
+ <p>Custo: cerca de US$ 0,00016 por resumo (1.500 tokens de entrada + 300 de saída).</p>
+</section>
+
+<section class="slide" data-titulo="Observabilidade">
+ <h2>Observabilidade e auditoria</h2>
+ <ul><li><span class="selo s-impl">Implementado</span> Powertools Logger com lista branca de campos, 5 log groups com retenção de 30 dias, métricas do stage do API Gateway, correlationId em toda resposta de erro.</li>
+ <li><span class="selo s-plan">Planejado</span> ObservabilidadeStack: dashboard CloudWatch, alarmes de erro 5xx e latência, métricas EMF, trilha de auditoria em <span class="mono">/painel-expedientes/auditoria</span>.</li></ul>
+</section>
+
+<section class="slide" data-titulo="Inovação e Kiro">
+ <h2>Inovação e uso do Kiro <span class="selo s-crit">Critério 3</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Specs</h3><p>Requisitos (36, com critérios de aceitação), design e tarefas em <span class="mono">.kiro/specs/hackathon-expedientes</span>, todos em português. Tarefas obrigatórias concluídas.</p></div>
+  <div class="card"><h3>Steering</h3><p>tech, structure, documentação e aws-profile fixam stack, convenções, segurança e o profile da conta em todo o código gerado.</p></div>
+  <div class="card"><h3>Produto</h3><p>Prioridade 0–100, sinais de risco, três visões da fila e IA que nunca vê dado sigiloso.</p></div>
+ </div>
+ <p class="nota">Hooks do Kiro (ex.: rodar testes e gitleaks ao salvar) <span class="selo s-plan">Planejado</span></p>
+</section>
+
 <!--MAIS-SLIDES-->
 
 </main>
@@ -337,6 +456,7 @@ var ROT={impl:['s-impl','Implementado'],parc:['s-parc','Parcial'],plan:['s-plan'
   f.forEach(function(p,i){timers.push(setTimeout(function(){p[1].forEach(function(k){NOS[k].el.classList.add('on')});p[2].forEach(function(j){setasEl[j].classList.add('on')});
    document.getElementById('passo').textContent='Passo '+(i+1)+' de '+f.length+': '+p[0];},reduz?i*10:i*1600));});};});
 })();
+document.getElementById('filtroInv').addEventListener('change',function(){var v=this.value;[].forEach.call(document.querySelectorAll('#tabInv tbody tr'),function(r){r.hidden=v&&r.dataset.st!==v;});});
 /*JS-MAIS*/
 </script>
 </body>
