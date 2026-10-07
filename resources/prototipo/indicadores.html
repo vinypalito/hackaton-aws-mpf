@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Indicadores · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Indicadores e dashboards</h1>
+				<p>Volume, pendências, prazos e produtividade (estoque_diario, produtividade_diaria, prazos e expedientes).</p>
+			</div>
+			<div class="barra" style="margin:0">
+				<div class="campo"><label for="periodo">Período</label>
+					<select id="periodo"><option value="30">Últimos 30 dias</option><option value="60">Últimos 60 dias</option><option value="90" selected>Últimos 90 dias</option></select></div>
+				<div class="campo"><label for="gerenciador">Gerenciador</label><select id="gerenciador"></select></div>
+			</div>
+		</div>
+		<p id="resumo" class="sr-only" aria-live="polite"></p>
+		<div id="kpis" class="grade grade-kpi" style="margin-bottom:1rem"></div>
+		<div class="grade grade-2">
+			<section class="cartao grafico" aria-labelledby="t-estoque"><h2 id="t-estoque">Estoque diário</h2><div id="g-estoque"></div></section>
+			<section class="cartao grafico" aria-labelledby="t-fluxo"><h2 id="t-fluxo">Entradas e saídas por semana</h2><div id="g-fluxo"></div></section>
+			<section class="cartao" aria-labelledby="t-pendencias"><h2 id="t-pendencias">Pendências por situação do prazo</h2><div id="g-pendencias"></div></section>
+			<section class="cartao grafico" aria-labelledby="t-cumprimento"><h2 id="t-cumprimento">Cumprimento de prazos por mês</h2><div id="g-cumprimento"></div></section>
+			<section class="cartao" aria-labelledby="t-assuntos"><h2 id="t-assuntos">Assuntos com mais pendências</h2><div id="g-assuntos"></div></section>
+			<section class="cartao" aria-labelledby="t-caixas"><h2 id="t-caixas">Distribuição por gerenciador e caixa</h2><div id="g-caixas"></div></section>
+			<section class="cartao widget-largo" aria-labelledby="t-produtividade"><h2 id="t-produtividade">Produtividade por pessoa</h2><div id="g-produtividade"></div></section>
+		</div>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/indicadores.js"></script>
+</body>
+</html>

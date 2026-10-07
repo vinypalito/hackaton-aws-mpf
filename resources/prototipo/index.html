@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Início · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1 id="saudacao">Início</h1>
+				<p id="data-hoje"></p>
+			</div>
+			<div class="grupo-botoes">
+				<a class="btn btn-primario" href="foco.html">Começar pelo próximo expediente</a>
+				<button type="button" class="btn" id="btn-personalizar">Personalizar tela inicial</button>
+			</div>
+		</div>
+		<div id="widgets" class="widgets"></div>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/inicio.js"></script>
+</body>
+</html>

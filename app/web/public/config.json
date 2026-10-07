@@ -1,0 +1,9 @@
+{
+  "apiUrl": "https://ia21eq5d4i.execute-api.us-east-1.amazonaws.com/dev/api/v1",
+  "cognito": {
+    "dominio": "https://painel-expedientes-dev-629306711592.auth.us-east-1.amazoncognito.com",
+    "clientId": "72f0han5n5lb9buiip1pt57bgc",
+    "escopos": "openid email profile"
+  },
+  "dataReferencia": "2026-10-07T17:00:00-03:00"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@painel/dominio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Regras de negócio puras do painel (prazo, prioridade, risco, lote, máscara, autorização), sem dependência de AWS.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

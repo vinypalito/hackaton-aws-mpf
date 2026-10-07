@@ -1,0 +1,24 @@
+{
+  "name": "@painel/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scripts operacionais (carga do seed, migração, restauração, destruir).",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "carregar-seed": "tsx src/carregar-seed.ts",
+    "criar-usuarios": "tsx src/criar-usuarios.ts",
+    "destruir": "bash ./destruir.sh"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "3.1147.0",
+    "@aws-sdk/client-dynamodb": "3.1147.0"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}

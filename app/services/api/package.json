@@ -1,0 +1,24 @@
+{
+  "name": "@painel/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Handlers Lambda por rota e camada de repositório (DynamoDB). O empacotamento para a Lambda é feito pelo esbuild (NodejsFunction do CDK).",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "2.36.0",
+    "@aws-sdk/client-bedrock-runtime": "3.1147.0",
+    "@aws-sdk/client-dynamodb": "3.1147.0",
+    "@aws-sdk/lib-dynamodb": "3.1147.0",
+    "@painel/dominio": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.164"
+  }
+}

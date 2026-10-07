@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Alertas · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Alertas e notificações</h1>
+				<p>Novos expedientes, intimações, prazos, designações, devoluções e alterações, mais o resumo diário por e-mail.</p>
+			</div>
+		</div>
+		<div class="grupo-botoes" role="tablist" aria-label="Alertas" id="abas" style="margin-bottom:1rem">
+			<button type="button" class="btn" role="tab" id="aba-notificacoes" aria-controls="painel-notificacoes" aria-selected="true">Notificações</button>
+			<button type="button" class="btn" role="tab" id="aba-resumo" aria-controls="painel-resumo" aria-selected="false" tabindex="-1">Resumo diário por e-mail</button>
+		</div>
+
+		<section id="painel-notificacoes" role="tabpanel" aria-labelledby="aba-notificacoes">
+			<div class="cartao" style="margin-bottom:1rem">
+				<h2 class="sr-only">Filtros de notificações</h2>
+				<div class="barra" style="margin:0">
+					<div class="campo"><label for="n-situacao">Situação</label>
+						<select id="n-situacao"><option value="nao-lidas">Não lidas</option><option value="">Todas</option><option value="lidas">Lidas</option></select></div>
+					<div class="campo"><label for="n-tipo">Tipo</label><select id="n-tipo"></select></div>
+					<div class="campo"><label for="n-severidade">Severidade</label><select id="n-severidade"></select></div>
+					<div class="campo"><label for="n-periodo">Período</label>
+						<select id="n-periodo"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="">Todo o histórico</option></select></div>
+					<span class="espaco"></span>
+					<div class="grupo-botoes" style="align-self:flex-end">
+						<button type="button" class="btn" id="btn-simular">Simular alerta em tempo real</button>
+						<button type="button" class="btn btn-primario" id="btn-ler-todas">Marcar exibidas como lidas</button>
+					</div>
+				</div>
+			</div>
+			<div class="grade" style="grid-template-columns:minmax(0,3fr) minmax(260px,1fr)">
+				<section class="cartao" aria-labelledby="t-lista-notif">
+					<h2 id="t-lista-notif" tabindex="-1">Notificações</h2>
+					<p id="n-resumo" class="pequeno" aria-live="polite"></p>
+					<div id="n-lista"></div>
+					<div class="paginacao"><button type="button" class="btn btn-pequeno" id="btn-mais" hidden>Mostrar mais</button></div>
+				</section>
+				<section class="cartao" aria-labelledby="t-por-tipo">
+					<h2 id="t-por-tipo">Não lidas por tipo</h2>
+					<div id="n-por-tipo"></div>
+				</section>
+			</div>
+		</section>
+
+		<section id="painel-resumo" role="tabpanel" aria-labelledby="aba-resumo" hidden>
+			<div class="grade" style="grid-template-columns:minmax(0,2fr) minmax(260px,1fr)">
+				<section class="cartao" aria-labelledby="t-previa-email">
+					<header><h2 id="t-previa-email">Pré-visualização do e-mail</h2>
+						<div class="grupo-botoes"><button type="button" class="btn btn-pequeno" id="btn-baixar-email">Baixar HTML</button>
+							<button type="button" class="btn btn-pequeno" id="btn-copiar-email">Copiar texto</button></div></header>
+					<div id="email"></div>
+				</section>
+				<section class="cartao" aria-labelledby="t-config-email">
+					<h2 id="t-config-email">Configuração</h2>
+					<p><input type="checkbox" id="cfg-email"> <label for="cfg-email">Receber o resumo diário por e-mail</label></p>
+					<div class="campo"><label for="cfg-antecedencia">Avisar prazos com antecedência de</label>
+						<select id="cfg-antecedencia"><option value="1">1 dia</option><option value="3">3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option></select></div>
+					<p class="pequeno texto-suave" style="margin-top:1rem">Arquitetura sugerida: regra do EventBridge Scheduler (dias úteis, 7h) → Lambda que consulta o GSI2 por setor e o item CONTADOR → Amazon SES (template) para quem tem <code>notificarPorEmail = true</code>.
+						No sandbox do SES, o envio só vai para endereços verificados.</p>
+				</section>
+			</div>
+		</section>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/alertas.js"></script>
+</body>
+</html>

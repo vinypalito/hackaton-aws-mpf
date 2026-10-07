@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+cdk.out/
+build/
+.angular/
+*.tsbuildinfo
+.env
+.env.*

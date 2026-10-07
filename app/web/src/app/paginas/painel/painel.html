@@ -1,0 +1,195 @@
+<div class="topo">
+  <div>
+    <p class="u-sobretitulo mb-1">Caixa {{ rotuloCaixa() }}{{ situacao() ? ' · ' + rotuloSituacao(situacao()) : '' }}</p>
+    <h1 class="u-manchete">
+      Painel de expedientes
+      @if (resumo().total > 0) {
+        <span class="sub">: <span class="u-alerta">{{ resumo().vencidos }} vencidos ou hoje</span>, <em>{{ resumo().curtos }} em até 3 dias</em></span>
+      }
+    </h1>
+  </div>
+
+  <div class="u-segmentos" role="group" aria-label="Visão">
+    @for (v of visoes; track v.valor) {
+      <button type="button" [attr.aria-pressed]="visao() === v.valor" [attr.title]="v.descricao" (click)="selecionarVisao(v.valor)">
+        @switch (v.valor) {
+          @case ('lista') {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+          }
+          @case ('quadro') {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5" /><rect x="10" y="4" width="5" height="11" rx="1.5" /><rect x="17" y="4" width="4" height="7" rx="1.5" /></svg>
+          }
+          @case ('radar') {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          }
+        }
+        {{ v.rotulo }}
+      </button>
+    }
+  </div>
+</div>
+
+<div class="filtros">
+  <div class="u-segmentos" role="group" aria-label="Caixa">
+    @for (c of caixas; track c.valor) {
+      <button type="button" [attr.aria-pressed]="caixa() === c.valor" (click)="selecionarCaixa(c.valor)">{{ c.rotulo }}</button>
+    }
+  </div>
+
+  <div class="filtro-situacao">
+    <label for="filtro-situacao">Situação do prazo</label>
+    <select id="filtro-situacao" class="form-select form-select-sm" (change)="selecionarSituacao($any($event.target).value)">
+      <option value="" [selected]="situacao() === ''">Todas</option>
+      @for (s of situacoes; track s) {
+        <option [value]="s" [selected]="situacao() === s">{{ rotuloSituacao(s) }}</option>
+      }
+    </select>
+  </div>
+
+  <p aria-live="polite" class="status">{{ mensagemStatus() }}</p>
+</div>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">
+    Não foi possível carregar os expedientes.
+    @if (correlationId()) {
+      <span>Código para suporte: {{ correlationId() }}.</span>
+    }
+    <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="recarregar()">Tentar novamente</button>
+  </div>
+}
+
+@if (itens().length > 0) {
+  @switch (visao()) {
+    @case ('quadro') {
+      <div class="quadro">
+        @for (col of colunas(); track col.situacao) {
+          <section class="coluna {{ tom(col.situacao) }}" [attr.aria-labelledby]="'col-' + col.situacao">
+            <header>
+              <span class="u-ponto"></span>
+              <h2 class="u-rotulo-secao" [id]="'col-' + col.situacao">{{ rotuloSituacao(col.situacao) }}</h2>
+              <span class="u-contagem">{{ col.itens.length }}</span>
+            </header>
+            <ul>
+              @for (e of col.itens; track e.idExpediente) {
+                <li class="u-cartao cartao">
+                  <a class="u-mono id" [routerLink]="['/expedientes', e.idExpediente]">{{ texto(e['etiqueta'] ?? e.idExpediente) }}</a>
+                  <p class="assunto">{{ texto(e['assunto']) }}</p>
+                  <div class="rodape-cartao">
+                    <span class="badge {{ classeSituacao(e['statusPrazo']) }}">{{ dias(e['diasRestantes']) || rotuloSituacao(e['statusPrazo']) }}</span>
+                    @if (sigiloso(e)) {
+                      <span class="u-chip u-chip-sigilo">Restrito</span>
+                    }
+                    @if (e['urgente'] === true) {
+                      <span class="u-chip u-chip-urgente">Urgente</span>
+                    }
+                    <span class="u-avatar ms-auto" [attr.title]="texto(e['nomeResponsavel'])" aria-hidden="true">{{ iniciais(e['nomeResponsavel']) }}</span>
+                  </div>
+                </li>
+              } @empty {
+                <li class="vazio">Nada aqui.</li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    }
+    @case ('radar') {
+      <div class="u-cartao radar">
+        <div class="radar-cab" aria-hidden="true">
+          <div class="radar-rotulo">
+            <span class="u-rotulo-secao">Vencimentos por dia</span>
+            <span class="small text-body-secondary">Picos mostram onde o gabinete vai apertar</span>
+          </div>
+          <div class="trilha histo">
+            @for (d of diasRadar(); track d.d) {
+              <span class="dia" [class.hoje]="d.d === 0" [class.passado]="d.d < 0" [class.curto]="d.d > 0 && d.d <= 3">
+                <span class="coluna-histo" [style.height.%]="d.altura"></span>
+                <span class="u-mono rotulo-dia">{{ d.marcado ? (d.d === 0 ? 'hoje' : (d.d > 0 ? '+' : '') + d.d) : '' }}</span>
+              </span>
+            }
+          </div>
+        </div>
+        <ul class="radar-linhas">
+          @for (l of linhasRadar(); track l.e.idExpediente) {
+            <li class="{{ tom(l.e['statusPrazo']) }}">
+              <div class="radar-rotulo">
+                <span class="u-avatar" aria-hidden="true">{{ iniciais(l.e['nomeResponsavel']) }}</span>
+                <span class="radar-texto">
+                  <a class="u-mono id" [routerLink]="['/expedientes', l.e.idExpediente]">{{ texto(l.e['etiqueta'] ?? l.e.idExpediente) }}</a>
+                  <span class="assunto">{{ texto(l.e['assunto']) }}</span>
+                </span>
+                <span class="radar-status">{{ dias(l.e['diasRestantes']) || rotuloSituacao(l.e['statusPrazo']) }}</span>
+              </div>
+              <div class="trilha" aria-hidden="true">
+                <span class="hoje-linha" [style.left.%]="posicaoHoje"></span>
+                <span class="barra" [style.left.%]="l.barraInicio" [style.width.%]="l.barraLargura"></span>
+                <span class="marco" [style.left.%]="l.marco"></span>
+              </div>
+            </li>
+          }
+        </ul>
+        <p class="legenda small text-body-secondary">
+          Losango = prazo · barra = tempo desde a chegada ao setor · janela de 10 dias atrás a 30 dias à frente.
+        </p>
+      </div>
+    }
+    @default {
+      <div class="u-cartao tabela-cartao">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <caption>
+              Expedientes da caixa {{ rotuloCaixa() }}{{ situacao() ? ', situação ' + rotuloSituacao(situacao()) : '' }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Número</th>
+                <th scope="col">Assunto</th>
+                <th scope="col">Prazo</th>
+                <th scope="col">Situação do prazo</th>
+                <th scope="col">Prioridade</th>
+                <th scope="col">Responsável</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of itens(); track e.idExpediente) {
+                <tr class="{{ tom(e['statusPrazo']) }}">
+                  <td>
+                    <a [routerLink]="['/expedientes', e.idExpediente]">{{ texto(e['numeroReferencia'] ?? e.idExpediente) }}</a>
+                    <div class="u-mono small text-body-secondary">{{ texto(e['etiqueta']) }}</div>
+                  </td>
+                  <td>
+                    {{ texto(e['assunto']) }}
+                    @if (sigiloso(e)) {
+                      <span class="u-chip u-chip-sigilo ms-1">Restrito</span>
+                    }
+                  </td>
+                  <td class="text-nowrap">
+                    {{ data(e['dataPrazo']) }}
+                    @if (dias(e['diasRestantes']); as d) {
+                      <div class="small text-body-secondary">{{ d }}</div>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge {{ classeSituacao(e['statusPrazo']) }}">{{ rotuloSituacao(e['statusPrazo']) }}</span>
+                  </td>
+                  <td>{{ prioridade(e['prioridade']) }}</td>
+                  <td>
+                    <span class="d-inline-flex align-items-center gap-2">
+                      <span class="u-avatar" aria-hidden="true">{{ iniciais(e['nomeResponsavel']) }}</span>
+                      {{ texto(e['nomeResponsavel']) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+}
+
+@if (cursor() && !carregando()) {
+  <button type="button" class="btn btn-outline-primary mt-3" (click)="carregarMais()">Carregar mais</button>
+}

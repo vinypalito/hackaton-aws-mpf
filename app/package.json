@@ -1,0 +1,26 @@
+{
+  "name": "painel-expedientes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Painel unificado de expedientes do Único (MVP de hackathon) — monorepo npm workspaces.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "packages/dominio",
+    "services/api",
+    "infra",
+    "scripts",
+    "web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

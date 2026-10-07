@@ -1,0 +1,330 @@
+/* Bootstrap 5 (só CSS; sem jQuery). */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Tipografia do Único: Plex para leitura e dados, Newsreader para as manchetes. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans/latin-700.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/newsreader/latin-500.css';
+
+/*
+ * Tokens visuais (padrão "Caixa do Gabinete" do Único):
+ * papel #F5F4EF, tinta #15171C, azul institucional #1B3470 / #1D3C87,
+ * tons de prazo vermelho, âmbar, azul e verde. Contraste do texto ≥ 4,5:1.
+ */
+:root {
+  --u-papel: #f5f4ef;
+  --u-papel-2: #eae8e1;
+  --u-linha: #e3e1da;
+  --u-linha-fraca: #f0eee8;
+  --u-tinta: #15171c;
+  --u-tinta-2: #2b2f38;
+  --u-tinta-3: #4a4f5a;
+  --u-marinho: #1b3470;
+  --u-marinho-2: #2a4585;
+  --u-azul: #1d3c87;
+  --u-azul-escuro: #132a61;
+  --u-azul-claro: #e8edf8;
+  --u-azul-sel: #eef2fb;
+  --u-vermelho: #b42318;
+  --u-vermelho-bg: #fdecea;
+  --u-ambar: #8a5300;
+  --u-ambar-forte: #c27a00;
+  --u-ambar-bg: #fdf1dc;
+  --u-verde: #1f6b4a;
+  --u-verde-bg: #e3f1e9;
+  --u-neutro-bg: #efeee8;
+
+  --u-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --u-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --u-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+
+  --painel-cor-primaria: var(--u-azul);
+  --painel-cor-foco: var(--u-azul);
+  --painel-cor-foco-escuro: #ffcd07;
+
+  --bs-body-bg: var(--u-papel);
+  --bs-body-color: var(--u-tinta);
+  --bs-body-font-family: var(--u-sans);
+  --bs-body-font-size: 0.9375rem;
+  --bs-primary: #1d3c87;
+  --bs-primary-rgb: 29, 60, 135;
+  --bs-link-color: #1d3c87;
+  --bs-link-color-rgb: 29, 60, 135;
+  --bs-link-hover-color: #132a61;
+  --bs-link-hover-color-rgb: 19, 42, 97;
+  --bs-border-color: var(--u-linha);
+  --bs-secondary-color: var(--u-tinta-3);
+}
+
+body {
+  background: var(--u-papel);
+}
+
+.btn {
+  --bs-btn-border-radius: 10px;
+  --bs-btn-font-weight: 600;
+  min-height: 36px;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--u-azul);
+  --bs-btn-border-color: var(--u-azul);
+  --bs-btn-hover-bg: var(--u-azul-escuro);
+  --bs-btn-hover-border-color: var(--u-azul-escuro);
+  --bs-btn-active-bg: var(--u-marinho);
+  --bs-btn-active-border-color: var(--u-marinho);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--u-azul);
+  --bs-btn-border-color: #c7cfe3;
+  --bs-btn-hover-bg: var(--u-azul-claro);
+  --bs-btn-hover-color: var(--u-azul-escuro);
+  --bs-btn-hover-border-color: #c7cfe3;
+  --bs-btn-active-bg: var(--u-azul-claro);
+  --bs-btn-active-color: var(--u-azul-escuro);
+}
+
+/* ---------- Componentes compartilhados ---------- */
+
+.u-manchete {
+  margin: 0;
+  font-family: var(--u-serif);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.u-manchete em {
+  font-style: normal;
+  color: var(--u-azul);
+}
+
+.u-manchete .u-alerta {
+  color: var(--u-vermelho);
+}
+
+.u-sobretitulo {
+  font-size: 0.8125rem;
+  color: var(--u-tinta-3);
+  letter-spacing: 0.02em;
+}
+
+.u-mono {
+  font-family: var(--u-mono);
+}
+
+.u-cartao {
+  background: #fff;
+  border: 1px solid var(--u-linha);
+  border-radius: 14px;
+}
+
+.u-cartao-cab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-bottom: 1px solid #ecebe3;
+}
+
+.u-rotulo-secao {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.u-ponto {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--u-azul);
+}
+
+.u-contagem {
+  font-family: var(--u-mono);
+  font-size: 0.75rem;
+  color: var(--u-tinta-3);
+}
+
+.u-avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--u-papel-2);
+  color: var(--u-tinta-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.u-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--u-neutro-bg);
+  color: var(--u-tinta-2);
+}
+
+.u-chip-sigilo {
+  background: var(--u-vermelho-bg);
+  color: var(--u-vermelho);
+  font-weight: 600;
+}
+
+.u-chip-urgente {
+  background: var(--u-ambar-bg);
+  color: var(--u-ambar);
+  font-weight: 600;
+}
+
+/* Selo de situação do prazo: cor + texto (nunca só cor). */
+.selo {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.badge.selo {
+  --bs-badge-font-size: 0.75rem;
+  --bs-badge-font-weight: 600;
+  --bs-badge-padding-x: 10px;
+  --bs-badge-padding-y: 4px;
+  --bs-badge-border-radius: 6px;
+}
+
+.selo-vencido,
+.selo-vence_hoje {
+  background: var(--u-vermelho-bg);
+  color: var(--u-vermelho);
+}
+
+.selo-critico {
+  background: var(--u-ambar-bg);
+  color: var(--u-ambar);
+}
+
+.selo-atencao {
+  background: var(--u-azul-claro);
+  color: var(--u-azul);
+}
+
+.selo-no_prazo,
+.selo-cumprido {
+  background: var(--u-verde-bg);
+  color: var(--u-verde);
+}
+
+.selo-sem {
+  background: var(--u-neutro-bg);
+  color: var(--u-tinta-2);
+}
+
+/* Barra lateral de tom (indica o prazo nas linhas e cartões). */
+.tom-vencido,
+.tom-vence_hoje {
+  --u-tom: var(--u-vermelho);
+}
+
+.tom-critico {
+  --u-tom: var(--u-ambar-forte);
+}
+
+.tom-atencao {
+  --u-tom: var(--u-azul);
+}
+
+.tom-no_prazo {
+  --u-tom: var(--u-verde);
+}
+
+/* Seletor segmentado (escopo, visão). */
+.u-segmentos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--u-papel-2);
+}
+
+.u-segmentos button {
+  border: 0;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--u-tinta-3);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.u-segmentos button:hover {
+  color: var(--u-tinta);
+}
+
+.u-segmentos button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--u-tinta);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.u-segmentos .u-num {
+  font-family: var(--u-mono);
+  font-size: 0.75rem;
+  color: var(--u-tinta-3);
+}
+
+.form-select,
+.form-control {
+  border-radius: 10px;
+  border-color: #d9d6cd;
+  min-height: 38px;
+}
+
+.alert {
+  border-radius: 12px;
+}
+
+/* Foco sempre visível (contraste ≥ 3:1 com o fundo). */
+:focus-visible {
+  outline: 3px solid var(--painel-cor-foco);
+  outline-offset: 2px;
+}
+
+/* Respeita quem pede menos movimento (Req. 27.8). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

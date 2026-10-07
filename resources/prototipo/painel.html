@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Painel unificado · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Painel unificado de expedientes</h1>
+				<p>Documento, Judicial e Extrajudicial numa só lista, com filtros, priorização e ações em lote.</p>
+			</div>
+			<div class="grupo-botoes">
+				<button type="button" class="btn" id="btn-colunas">Colunas e exibição</button>
+				<button type="button" class="btn" id="btn-exportar">Exportar CSV</button>
+			</div>
+		</div>
+
+		<section class="cartao" aria-labelledby="titulo-filtros">
+			<h2 id="titulo-filtros" class="sr-only">Filtros e pesquisa</h2>
+			<div class="barra" role="group" aria-label="Caixa">
+				<span class="pequeno"><strong>Caixa:</strong></span>
+				<div class="grupo-botoes" id="caixas"></div>
+			</div>
+			<div class="barra">
+				<div class="campo" style="flex:1;min-width:240px">
+					<label for="busca"><span>Pesquisar</span></label>
+					<input type="search" id="busca" placeholder="Etiqueta, número, assunto, órgão, responsável, marcador…" autocomplete="off">
+				</div>
+				<div class="campo">
+					<label for="filtro-salvo"><span>Filtro salvo</span></label>
+					<select id="filtro-salvo"></select>
+				</div>
+				<div class="grupo-botoes" style="align-self:flex-end">
+					<button type="button" class="btn" id="btn-salvar-filtro">Salvar filtro</button>
+					<button type="button" class="btn" id="btn-limpar">Limpar filtros</button>
+				</div>
+			</div>
+			<div class="barra" role="group" aria-label="Priorização rápida">
+				<span class="pequeno"><strong>Priorizar:</strong></span>
+				<div class="grupo-botoes" id="presets"></div>
+			</div>
+			<details class="painel-filtros" id="filtros-avancados">
+				<summary>Filtros avançados <span id="qtd-filtros" class="pequeno texto-suave"></span></summary>
+				<div class="filtros">
+					<fieldset><legend>Gerenciador</legend><div class="opcoes" id="f-ger"></div></fieldset>
+					<fieldset><legend>Prazo</legend><div class="opcoes" id="f-prazo"></div></fieldset>
+					<fieldset><legend>Prioridade</legend><div class="opcoes" id="f-prioridade"></div></fieldset>
+					<fieldset><legend>Situação</legend><div class="opcoes" id="f-situacao"></div></fieldset>
+					<fieldset><legend>Sinalizações</legend><div class="opcoes" id="f-flags"></div></fieldset>
+					<fieldset class="fieldset-largo">
+						<legend>Responsável e classificação</legend>
+						<div class="grade">
+							<div class="campo"><label for="f-responsavel">Responsável</label><select id="f-responsavel"></select></div>
+							<div class="campo"><label for="f-tipo-resp">Tipo de responsabilidade</label>
+								<select id="f-tipo-resp"><option value="">Todos</option><option value="TITULAR">Titular</option><option value="DESIGNADO">Designado</option></select></div>
+							<div class="campo"><label for="f-assunto">Assunto</label><select id="f-assunto"></select></div>
+							<div class="campo"><label for="f-classe">Classe</label><select id="f-classe"></select></div>
+							<div class="campo"><label for="f-tema">Tema</label><select id="f-tema"></select></div>
+							<div class="campo"><label for="f-marcador">Marcador</label><select id="f-marcador"></select></div>
+						</div>
+					</fieldset>
+					<fieldset class="fieldset-largo">
+						<legend>Datas e tempo</legend>
+						<div class="grade">
+							<div class="campo"><label for="f-chegada-de">Chegada a partir de</label><input type="date" id="f-chegada-de"></div>
+							<div class="campo"><label for="f-chegada-ate">Chegada até</label><input type="date" id="f-chegada-ate"></div>
+							<div class="campo"><label for="f-prazo-de">Prazo a partir de</label><input type="date" id="f-prazo-de"></div>
+							<div class="campo"><label for="f-prazo-ate">Prazo até</label><input type="date" id="f-prazo-ate"></div>
+							<div class="campo"><label for="f-parado">Parado há mais de (dias)</label><input type="number" id="f-parado" min="0" step="1" inputmode="numeric"></div>
+						</div>
+					</fieldset>
+				</div>
+			</details>
+		</section>
+
+		<p id="resumo" class="pequeno" aria-live="polite" style="margin:.75rem 0"></p>
+		<div id="tabela"></div>
+		<nav class="paginacao" aria-label="Paginação" id="paginacao"></nav>
+		<div class="barra-lote" id="barra-lote" hidden>
+			<strong id="qtd-selecionados"></strong>
+			<span class="pequeno">Ações em lote (com pré-visualização e desfazer):</span>
+			<div class="grupo-botoes" id="acoes-lote"></div>
+			<span class="espaco"></span>
+			<button type="button" class="btn btn-pequeno" id="btn-limpar-selecao">Limpar seleção</button>
+		</div>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/painel.js"></script>
+</body>
+</html>

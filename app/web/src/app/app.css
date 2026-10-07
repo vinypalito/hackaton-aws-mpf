@@ -1,0 +1,231 @@
+.link-pular {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1080;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--u-azul);
+  font-weight: 600;
+}
+
+.casca {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeçalho marinho do Único: branco sobre #1B3470 (contraste > 10:1). */
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  min-height: 56px;
+  padding: 8px 20px;
+  background: var(--u-marinho);
+  color: #fff;
+}
+
+.cabecalho :focus-visible {
+  outline-color: var(--painel-cor-foco-escuro);
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  margin-right: auto;
+  color: #fff;
+  text-decoration: none;
+}
+
+.marca-unico {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: 0.14em;
+}
+
+.marca-produto {
+  padding-left: 12px;
+  border-left: 1px solid #3b558f;
+  color: #c9d3ec;
+  font-size: 0.8125rem;
+}
+
+.aviso-dados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #c9d3ec;
+  font-size: 0.8125rem;
+}
+
+.selo-sintetico {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #ffcd07;
+  color: #15171c;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.usuario-texto {
+  text-align: right;
+  line-height: 1.25;
+}
+
+.usuario dd,
+.usuario dt {
+  margin: 0;
+  display: inline;
+  font-weight: 400;
+}
+
+.usuario-nome {
+  display: block !important;
+  font-size: 0.8125rem;
+  font-weight: 600 !important;
+}
+
+.usuario-linha {
+  font-size: 0.75rem;
+  color: #c9d3ec;
+}
+
+.usuario-linha dt {
+  margin-right: 3px;
+}
+
+.usuario-linha dd {
+  margin-right: 4px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--u-azul-claro);
+  color: var(--u-marinho);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.btn-sair {
+  min-height: 34px;
+  border: 1px solid #4a64a0;
+  color: #fff;
+  font-weight: 500;
+}
+
+.btn-sair:hover {
+  background: #fff;
+  color: var(--u-marinho);
+}
+
+.corpo {
+  flex-grow: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* Trilho de modos de trabalho. */
+.trilho {
+  width: 76px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid var(--u-linha);
+  padding-top: 16px;
+}
+
+.trilho ul {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.trilho a {
+  width: 60px;
+  min-height: 52px;
+  padding: 6px 0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--u-tinta-3);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.trilho a:hover {
+  background: var(--u-papel);
+  color: var(--u-tinta);
+}
+
+.trilho a.ativo {
+  background: var(--u-azul-claro);
+  color: var(--u-azul);
+  font-weight: 700;
+}
+
+main {
+  flex-grow: 1;
+  min-width: 0;
+  padding: 24px 32px 32px;
+}
+
+main:focus {
+  outline: none;
+}
+
+main:focus-visible {
+  outline: 3px solid var(--painel-cor-foco);
+  outline-offset: -3px;
+}
+
+@media (max-width: 767.98px) {
+  .corpo {
+    flex-direction: column;
+  }
+
+  .trilho {
+    width: auto;
+    padding: 6px;
+    border-right: 0;
+    border-bottom: 1px solid var(--u-linha);
+  }
+
+  .trilho ul {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .trilho a {
+    width: 84px;
+  }
+
+  main {
+    padding: 16px;
+  }
+
+  .marca-produto,
+  .usuario-texto {
+    display: none;
+  }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Designação balanceada · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Designação com balanceamento de carga</h1>
+				<p>Sugere quem tem menos designações ativas e menos atrasos em relação à própria produtividade (designacoes + produtividade_diaria).</p>
+			</div>
+		</div>
+		<div id="aviso-perfil"></div>
+		<section class="cartao" aria-labelledby="t-carga" style="margin-bottom:1rem">
+			<header>
+				<h2 id="t-carga">Carga atual por pessoa</h2>
+				<p style="margin:0"><input type="checkbox" id="incluir-chefia"> <label for="incluir-chefia">Incluir membro e chefia na sugestão</label></p>
+			</header>
+			<div id="carga"></div>
+			<details class="pequeno" style="margin-top:.5rem"><summary>Como o índice é calculado</summary>
+				<p><strong>Carga</strong> = designações ativas + 2 × devoluções atrasadas + expedientes vencidos sob responsabilidade.<br>
+				<strong>Capacidade</strong> = média diária de ações nos últimos 30 dias (produtividade_diaria), mínimo 1.<br>
+				<strong>Índice</strong> = carga ÷ capacidade. Quanto menor, mais folga. Na distribuição de vários itens, a carga é somada a cada atribuição (algoritmo guloso).</p>
+			</details>
+		</section>
+		<section class="cartao" aria-labelledby="t-sem-designacao">
+			<header><h2 id="t-sem-designacao">Expedientes no setor sem designação</h2>
+				<button type="button" class="btn btn-primario" id="btn-distribuir" disabled>Distribuir selecionados</button></header>
+			<p id="resumo" class="pequeno" aria-live="polite"></p>
+			<div id="lista"></div>
+			<div class="paginacao"><button type="button" class="btn btn-pequeno" id="btn-mais" hidden>Mostrar mais</button></div>
+		</section>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/designacao.js"></script>
+</body>
+</html>
