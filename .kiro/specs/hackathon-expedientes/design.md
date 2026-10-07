@@ -351,7 +351,7 @@ Atende: Req. 22, 24.7, 26.3, 30.3, 32. Decisão D9.
 Atende: Req. 1, 24, 25.
 
 - **Autenticação:** Cognito User Pool; 14 usuários de `usuarios.csv` criados por script (`AdminCreateUser`, senha
-  temporária de demo em SSM SecureString, nunca no repositório). `ativo=false` → usuário desabilitado (Req. 1.6).
+  temporária de demo informada na execução do script, nunca no repositório). `ativo=false` → usuário desabilitado (Req. 1.6).
 - **Autorização:** middleware TypeScript único (`comAutorizacao(handler)`) chama `autorizar` do pacote de domínio com
   o usuário das *claims* (`{idUsuario, perfil, siglaSetor}`), a ação e o recurso (`Expediente{siglaSetor,
   nivelSigilo, idResponsavel}`, `Filtro`, `Lote`…). A matriz do Req. 24.3 fica declarada como dados em
