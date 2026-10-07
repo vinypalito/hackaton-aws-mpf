@@ -1,0 +1,724 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Criar monorepo npm workspaces (`packages/dominio`, `packages/contratos`, `services/api`, `services/agendados`, `web`, `infra`, `scripts`, `tests`) com `.nvmrc` = `24`, `engines.node >=24`, TypeScript, ESLint, Prettier, Vitest + fast-check e comandos `npm test`, `npm run lint` e `npm run build`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384872541
+      }
+    ],
+    "1.2 Criar app AWS CDK v2 (`aws-cdk-lib` 2.x, versões fixadas) com tags `projeto`/`ambiente`, parâmetros por ambiente/órgão e testes de *assertions* (sem `*` em políticas de dados, `nodejs24.x`, retenção de logs)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873013
+      }
+    ],
+    "1.3 Implementar `DadosStack`: tabela `Expedientes` (PK/SK, GSI1, GSI2 String, projeção ALL, on-demand, PITR, TTL `expiraEm`, criptografia padrão gerenciada pela AWS)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873406
+      }
+    ],
+    "1.4 Implantar (`npx cdk bootstrap` uma vez e `npx cdk deploy DadosStack --profile hackatongabinete --region us-east-1`) e conferir com `aws dynamodb describe-table --table-name Expedientes --profile hackatongabinete`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873535
+      }
+    ],
+    "2.1 Criar `scripts/carregar-seed.ps1`/`.sh` que executa exatamente `AWS_PROFILE=hackatongabinete python3 resources/hackathon-expedientes/seed/gerar_seed.py --carregar --criar-tabela --tabela Expedientes --regiao us-east-1` (no PowerShell, `$Env:AWS_PROFILE=\"hackatongabinete\"` antes), sem editar arquivos de `seed/saida/`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873715
+      }
+    ],
+    "2.2 Criar `scripts/verificar-carga` que conta 49.108 itens e compara a contagem por `entidade` com as linhas de cada CSV (via `Query` por partição conhecida/contagem exportada, sem `Scan` em rota)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873821
+      }
+    ],
+    "2.3 Criar `scripts/migrar` idempotente: 30 favoritos `USR#…/FAV#…`, 9 espelhos `SETOR#…/FILTRO#…`, códigos `CIENCIA`, `REVERSAO_LOTE`, `DESFAZER`, domínio `STATUS_EXECUCAO_LOTE` e `versao = 1` em todo `META`; verificar 49.153 itens e reexecução sem duplicatas": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384873941
+      }
+    ],
+    "2.4 Criar `scripts/restaurar-demo` (limpa itens criados pela aplicação, recarrega o seed, reaplica migração e confirma contagens)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874104
+      }
+    ],
+    "2.5 Criar configuração `DATA_REFERENCIA` (padrão `2026-10-07T17:00:00-03:00`) como variável de ambiente das Lambdas, definida no CDK": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874290
+      }
+    ],
+    "3.1 Implementar `calcularStatusPrazo` (RN1 nos ativos; `CUMPRIDO`/`CUMPRIDO_COM_ATRASO` nos baixados) com testes unitários": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874479
+      }
+    ],
+    "3.2 Implementar `calcularPontuacao` com composição (RN2, metade em `ENVIADO_NAO_RECEBIDO`, 0 nos baixados) e faixas, com testes unitários e de propriedade (0–100)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874659
+      }
+    ],
+    "3.3 Implementar `chaveGsi1`/`chaveGsi2` e ordenação da fila (RN3) idênticas ao gerador": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874828
+      }
+    ],
+    "3.4 Escrever testes de paridade lendo os CSVs: RN1 nos 3.043 ativos, 540/526 nos baixados, RN2 nos 4.109": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384874975
+      }
+    ],
+    "3.5 Implementar `mascararSigilo` (campos D1, texto \"Conteúdo sigiloso\") e `validarCriterios` (lista branca do Req. 5) com testes": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875137
+      }
+    ],
+    "3.6 Implementar `calcularRisco` com faixas Alto/Médio/Baixo e testes": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875291
+      }
+    ],
+    "3.7 Implementar `autorizar(usuario, acao, recurso)` com a matriz do Req. 24.3 declarada como dados (negação por padrão, 404 outro setor / 403 mesmo setor) e testes permitido/negado por linha": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875459
+      }
+    ],
+    "4.1 Implementar `AuthStack`: Cognito User Pool com atributos `custom:idUsuario`, `custom:siglaSetor`, `custom:perfil` (somente leitura), App Client PKCE; script que provisiona os 14 usuários de `usuarios.csv` (senha temporária informada na execução, nunca gravada no repositório; `ativo=false` desabilitado)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875626
+      }
+    ],
+    "4.2 Implementar a camada de repositório DynamoDB (`services/api/repositorio/`): única conhecedora de `PK`/`SK`, `GSI1` e `GSI2`, só `ExpressionAttributeValues`, sem `Scan`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875799
+      }
+    ],
+    "4.3 Implementar `ApiStack`: API Gateway REST com Cognito Authorizer, validação por JSON Schema, throttling e *usage plan*, CORS restrito; Lambdas `nodejs24.x` arm64 enxutas (sem Express/Nest), uma role IAM por Lambda; middleware (claims → contexto, `autorizar`, `correlationId`, erros padronizados, logger com lista branca)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384875934
+      }
+    ],
+    "4.4 Implementar `GET /me`, `GET /contadores` e `GET /home` (contadores, 10 prazos do GSI2 com `requerAcao`, 5 alertas não lidos, próximo expediente, informes vigentes)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876153
+      }
+    ],
+    "4.5 Implementar `GET /expedientes` lendo o GSI1 (versão inicial sem índice em memória), com visão unificada/separada, caixas, filtros principais (prazo, prioridade, responsável, assunto), ordenação e cursor": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876304
+      }
+    ],
+    "4.6 Implementar `GET /expedientes/{id}` (uma `Query` em `EXP#<id>`, máscara de sigilo, 404 para outro setor)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876438
+      }
+    ],
+    "4.7 Escrever testes de API para home, painel e detalhe: 401, 404 entre setores, sigiloso para servidor não responsável": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876573
+      }
+    ],
+    "5.1 Criar a SPA em `web/` com Angular CLI 22 (standalone, Signals, `ng test` com o runner padrão), instalar Bootstrap 5 (versão fixada, só CSS + JS pontual, sem jQuery) e aplicar o tema visual do Único sobre as variáveis do Bootstrap": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876703
+      }
+    ],
+    "5.2 Implementar `WebStack` (S3 privado SSE-S3 + CloudFront com OAC, TLS 1.2, *response headers policy* com CSP/HSTS/`frame-ancestors 'none'`) e deploy do `ng build --configuration production`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384876839
+      }
+    ],
+    "5.3 Criar shell acessível: login Cognito, cabeçalho com usuário/setor/perfil, \"Dados de 07/10/2026, 17:00\", \"Base 100% sintética\", skip link, `lang=\"pt-BR\"`, `title` por rota, região `aria-live` global, logout": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384877083
+      }
+    ],
+    "5.4 Criar componentes base acessíveis com Bootstrap 5: tabela de dados (`caption`, `th id`, `td headers`), campo com `label`/`invalid-feedback` ligado por `aria-describedby`, selo de prazo e de prioridade (cor + ícone + texto, cores do catálogo)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384877301
+      }
+    ],
+    "5.5 Implementar tela inicial com widgets obrigatórios, erro isolado por widget e títulos navegáveis": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384877492
+      }
+    ],
+    "5.6 Implementar painel: seletor de visão (com atalho \"Processos judiciais\"), abas de caixa com contador, filtros principais, chips removíveis, filtros na URL, estado vazio, paginação": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384877693
+      }
+    ],
+    "5.7 Implementar detalhe do expediente com histórico em tabela acessível (quem, quando, de onde, para onde), prazos e designações": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384877937
+      }
+    ],
+    "5.8 Implementar layout responsivo com o grid do Bootstrap (cartões < 768 px, alvos ≥ 24 px, reflow 320 px, zoom 200 %, `prefers-reduced-motion`)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384878259
+      }
+    ],
+    "5.9 Checkpoint MVP: implantar tudo e percorrer login → home → painel filtrado → detalhe com `GABSUB3-DVT-U02` e `GABSUB3-DVT-U03`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384878752
+      }
+    ],
+    "6.1 Implementar `avaliarElegibilidade` e `aplicarEfeito` (validação pura do lote: 7 ações, RN4, RN5, efeitos D4, limite 200, before-image) com testes unitários e de propriedade (preview ≡ execução; executar + desfazer = estado anterior)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384879059
+      }
+    ],
+    "6.2 Implementar `POST /lotes/preview` (relê `META`, autorização item a item, listas \"Serão alterados\"/\"Serão ignorados\" com motivo, limite 200)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384879503
+      }
+    ],
+    "6.3 Implementar `POST /lotes` síncrono (≤ 50) em blocos de 25: `Idempotency-Key`, `TransactWriteItems` por item com `versao`, `MOV#`, `DES#`/`ROT#`, `ANTES#`, `ITEM#`, `ADD CONT#`, `ADD versao INDICE#BUSCA` e `NOT#`; trilha em `USR#<id>/LOTE#<dataHora>#<idLote>`; recálculo de prioridade e GSIs; resultado `PARCIAL`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384879998
+      }
+    ],
+    "6.4 Implementar Lambda de lote com invocação assíncrona para 51–200 itens (HTTP 202, status `PENDENTE`/`EM_PROCESSAMENTO`/`CONCLUIDO` em `LOTE#/STATUS`, retomada pela mesma `Idempotency-Key`, retentativa nativa e alarme de erros)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384880465
+      }
+    ],
+    "6.5 Implementar `POST /lotes/{id}/desfazer` (≤ 24 h, autor ou `CHEFE`, condicional a `versaoDepois`, `REVERSAO_LOTE`, lote `DESFAZER`, 409 fora da janela)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384880857
+      }
+    ],
+    "6.6 Implementar `GET /lotes` (meus e do setor, 52 do seed sem \"Desfazer\") e filtros por `tipoAcao`/`resultado`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384881257
+      }
+    ],
+    "6.7 Implementar na SPA seleção múltipla, barra de lote e `<dialog>` modal acessível (estilo Bootstrap) com pré-visualização, resultado por `aria-live`, \"Desfazer\" e valor otimista \"atualizando…\" nos contadores": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384881605
+      }
+    ],
+    "6.8 Escrever testes de API do lote: retomada após falha simulada sem duplicar, repetição com a mesma `Idempotency-Key` sem alterar contadores, desfazer duas vezes, item alterado entre execução e desfazer, 403 por perfil": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384882024
+      }
+    ],
+    "7.1 Implementar o índice de busca do setor em memória da Lambda (remontado por `Query GSI1` quando `INDICE#BUSCA.versao` muda) e migrar `GET /expedientes` para pesquisa livre normalizada, todos os filtros do RF03, total exato e cursor por versão; medir `LatenciaConvergenciaContador`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384882356
+      }
+    ],
+    "7.2 Implementar `AgendamentosStack` (EventBridge Scheduler) com a reconciliação a cada 15 min e sob comando, e teste que compara contadores com contagem direta após carga, lotes e reconciliação": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384882729
+      }
+    ],
+    "7.3 Implementar módulo `auditar` gravando no grupo `/painel-expedientes/auditoria` do CloudWatch Logs (campos mínimos, sem dados sigilosos, roles só com `PutLogEvents`) e teste de `AccessDenied` ao apagar e de não duplicação por `eventId`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384883228
+      }
+    ],
+    "8.1 Adicionar ao `ApiStack`, por parâmetro: Guardrail (conteúdo, *prompt attack*, PII) e permissão `bedrock:InvokeModel` só para `us.amazon.nova-lite-v1:0`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384883568
+      }
+    ],
+    "8.2 Implementar `POST /ia/resumo-dia` com dados mascarados (sem nomes, e-mails, anotações nem conteúdo sigiloso), timeout 5 s e cache por setor": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384883824
+      }
+    ],
+    "8.3 Implementar `POST /ia/interpretar-pesquisa` com saída JSON validada por `validarCriterios`, limite 30/h por usuário e métrica de custo": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384884055
+      }
+    ],
+    "8.4 Implementar na SPA o widget \"Resumo do dia\" e \"Pesquisar com IA\" (filtros interpretados exibidos e aplicados só após confirmação, selo \"Gerado por IA — confira antes de agir\", fallback manual)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384884321
+      }
+    ],
+    "9.1 Implementar filtros salvos (CRUD, padrão, compartilhar com espelho na mesma transação, listar próprios + compartilhados) com testes de API usando `FIL000001`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384884556
+      }
+    ],
+    "9.2 Implementar personalização (colunas, reordenação por arrastar nativo e por botões, ordenação, agrupamento, densidade, itens por página, tema) em `PREF#<contexto>`": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384884800
+      }
+    ],
+    "9.3 Implementar composição da prioridade visível e destaques de urgentes/próximos do vencimento/requer ação": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384885282
+      }
+    ],
+    "9.4 Implementar modo foco (fila GSI2, ação pendente e atalho)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384885606
+      }
+    ],
+    "9.5 Implementar anotação, favorito pessoal (dois usuários no mesmo expediente, teste de API) e filtro/exportação do histórico": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384885986
+      }
+    ],
+    "9.6 Implementar central de alertas (filtros, lida/não lida, contador no cabeçalho, máscara, `NOT#` gravado na transação, *polling* ≤ 30 s)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384886348
+      }
+    ],
+    "9.7 Implementar exportação CSV segura (BOM, neutralização de fórmulas, máscara, 5.000 linhas, auditoria) e publicar OpenAPI": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384886811
+      }
+    ],
+    "10.1 Implementar filtro e ordenação por índice de risco e widget \"Maior risco\"": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384887153
+      }
+    ],
+    "10.2 Implementar calendário mensal e exportação `.ics` sem conteúdo sigiloso, com lembrete configurável": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384887620
+      }
+    ],
+    "10.3 Implementar designação balanceada (sugestões, distribuição na pré-visualização, só `CHEFE`/`MEMBRO`) e widget \"Carga da equipe\"": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384887917
+      }
+    ],
+    "10.4 Implementar rotina diária no `AgendamentosStack` (EventBridge Scheduler 07:00 + Lambda + SES): alertas de prazo sem duplicar e resumo (HTML acessível + texto, sandbox, retentativa com recuo e alarme de erros) com pré-visualização": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384888311
+      }
+    ],
+    "10.5 Implementar dashboards com tabela alternativa, filtros por período/gerenciador, restrição de produtividade individual, CSV e impressão": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384888785
+      }
+    ],
+    "10.6 Implementar configuração da tela inicial (mostrar/ocultar, reordenar por teclado e arrastar nativo, padrão por perfil, `PREF#TELA_INICIAL`) e widgets opcionais": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384889270
+      }
+    ],
+    "11.1 Implementar `ObservabilidadeStack`: grupos do CloudWatch Logs com retenção de 30 dias, Powertools (Logger e Metrics/EMF), consultas do Logs Insights por `correlationId`, dashboard e alarmes simples (5xx, p95, erros de Lambda, throttling)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384889534
+      }
+    ],
+    "11.2 Adicionar axe-core aos testes de componente do `ng test` (tela inicial, painel, detalhe, diálogo de lote, indicadores); opcional: E2E do roteiro da demo com Playwright + axe-core": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384889718
+      }
+    ],
+    "11.3 Criar gerador 10× (`scripts/gerar-carga-10x.py`, importa `gerar_seed.py`, grava em `build/` e tabela `Expedientes-carga`, recusa destino do seed) e teste de carga k6 com p50/p95/p99": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384889936
+      }
+    ],
+    "11.4 Garantir cobertura ≥ 80 % no domínio e configurar `gitleaks` antes do commit": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384890248
+      }
+    ],
+    "12.1 Preencher steering `product.md` e `structure.md` com produto, estrutura e convenções reais, mantendo `tech.md` como fonte da stack": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384890631
+      }
+    ],
+    "12.2 Criar hooks Kiro: testes de domínio ao salvar regras, verificação de acessibilidade ao salvar componentes, testes da matriz ao salvar `autorizacao/**`, bloqueio de segredos antes do commit": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384891037
+      }
+    ],
+    "12.3 Escrever README (propósito, diagrama, implantar, carregar, executar, testar, destruir), ADRs, `docs/lgpd.md` (registro de tratamento, retenção 30 dias), `docs/custos.md` (evento e produção) e caminho para produção com a lista de serviços opcionais/futuros": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384891377
+      }
+    ],
+    "12.4 Criar `scripts/destruir` (`npx cdk destroy --all --profile hackatongabinete`, bucket com `autoDeleteObjects` e grupos de logs)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384891886
+      }
+    ],
+    "12.5 Escrever roteiro de 5 minutos (problema → solução → demo → resultados → próximos passos) com dois perfis do `GABSUB3-DVT` e negação de acesso, cronometrar dois ensaios": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384892224
+      }
+    ],
+    "12.6 Preparar contingência (gravação e capturas) e FAQ curto (arquitetura, segurança, custo, produção)": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384892743
+      }
+    ],
+    "12.7 Revisão final: rodar `restaurar-demo`, `npm test` (raiz e `web/`) e conferir que nenhum dado real ou credencial entrou no repositório": [
+      {
+        "executionId": "00b100d9-94e7-4a74-af9f-b46cefa2967b",
+        "chatSessionId": "sess_1040d6d8-db9e-4df6-b29a-d9a01233c74a",
+        "timestamp": 1791384893261
+      }
+    ],
+    "1.1 Criar monorepo npm workspaces mínimo (`packages/dominio`, `services/api`, `web`, `infra`, `scripts`) com `.nvmrc` = `24`, TypeScript e Vitest; comandos `npm test` e `npm run build` na raiz (sem ESLint/Prettier obrigatórios)": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385197686
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385208663
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385389924
+      }
+    ],
+    "1.2 Criar app CDK v2 com tags `projeto=painel-expedientes`/`ambiente=<env>` e `DadosStack` (tabela `Expedientes` com PK/SK, GSI1, GSI2, on-demand, PITR, TTL `expiraEm`); implantar com `npx cdk deploy DadosStack --profile hackatongabinete --region us-east-1`": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385197823
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385396986
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386190166
+      }
+    ],
+    "1.3 Criar `scripts/carregar-seed` que lê `resources/hackathon-expedientes/seed/saida/dynamodb/itens.json` (DynamoDB JSON, um item por linha) e grava com `BatchWriteItem` (lotes de 25, reenvio de `UnprocessedItems`), sem usar `gerar_seed.py --carregar` nem `--criar-tabela`; conferir a contagem total gravada; definir `DATA_REFERENCIA=2026-10-07T17:00:00-03:00` como variável de ambiente no CDK": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385197946
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386199708
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791388392623
+      }
+    ],
+    "2.1 Implementar em `packages/dominio` `calcularStatusPrazo`, `calcularPontuacao`, `mascararSigilo` e `autorizar` (matriz como dados, negação por padrão), com testes unitários básicos": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198046
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385398890
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386191850
+      }
+    ],
+    "3.1 Implementar `AuthStack` (Cognito User Pool com `custom:idUsuario`, `custom:siglaSetor`, `custom:perfil`; App Client PKCE) e script que cria os usuários de `usuarios.csv` com senha informada na execução (nunca gravada no repositório)": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198142
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386202301
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386974123
+      }
+    ],
+    "3.2 Implementar o repositório DynamoDB (`services/api/repositorio/`) e a `ApiStack` (API Gateway REST, Cognito Authorizer, CORS, Lambdas `nodejs24.x` arm64 com `NodejsFunction`) com `GET /me`, `GET /home`, `GET /expedientes` (GSI1, filtros básicos de caixa e prazo, cursor) e `GET /expedientes/{id}` (máscara de sigilo, 404 entre setores)": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198287
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791387008670
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791389504754
+      }
+    ],
+    "3.3 Escrever testes de API mínimos: 401 sem token, 404 entre setores e sigilo mascarado": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198385
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791388716456
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791389137687
+      }
+    ],
+    "4.1 Criar SPA Angular 22 + Bootstrap 5 com login Cognito, cabeçalho (usuário, setor, perfil e \"Dados de 07/10/2026, 17:00\"), skip link e `lang=\"pt-BR\"`": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198484
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791387010975
+      },
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791388394533
+      }
+    ],
+    "4.2 Implementar as telas: home (contadores, prazos, alertas), painel (abas de caixa, filtros básicos, tabela acessível com `caption`/`th`) e detalhe com histórico": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198595
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791388717784
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791389139555
+      }
+    ],
+    "4.3 Implementar `WebStack` (S3 privado + CloudFront com OAC) e implantar; checkpoint da demo percorrendo login → home → painel → detalhe com `GABSUB3-DVT-U02` e `GABSUB3-DVT-U03`": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198719
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791389509033
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791390409787
+      }
+    ],
+    "5.1 Escrever README curto (o que é, implantar, carregar, rodar, destruir) e `scripts/destruir` (`npx cdk destroy --all --profile hackatongabinete --region us-east-1`)": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791385198810
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791390419384
+      },
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791390526129
+      }
+    ],
+    "2. Domínio": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791386192277
+      }
+    ],
+    "1. Fundação": [
+      {
+        "executionId": "8d4f62d5-4bf4-483f-8944-81424b9cd11f",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791388392783
+      }
+    ],
+    "3. Autenticação e API de leitura": [
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791389504933
+      }
+    ],
+    "4. Frontend": [
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791390409992
+      }
+    ],
+    "5. Fechamento": [
+      {
+        "executionId": "6888dc3d-9102-46e5-b6ac-e5738b8cc50e",
+        "chatSessionId": "sess_4e940fe0-6d08-4ad2-809d-fa49192235f9",
+        "timestamp": 1791390526305
+      }
+    ]
+  }
+}

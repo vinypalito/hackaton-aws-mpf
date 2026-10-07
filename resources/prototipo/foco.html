@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Modo foco · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Modo foco: próximo expediente</h1>
+				<p>Um item por vez, na ordem do índice GSI2 (prazo mais próximo e, no empate, maior pontuação de prioridade).</p>
+			</div>
+			<div class="grupo-botoes" role="group" aria-label="Escopo da fila">
+				<button type="button" class="btn" data-escopo="meus" aria-pressed="true">Minha fila</button>
+				<button type="button" class="btn" data-escopo="setor" aria-pressed="false">Fila do setor</button>
+			</div>
+		</div>
+		<div class="foco-cartao" style="margin-bottom:.75rem">
+			<div class="barra" style="margin-bottom:.35rem">
+				<span id="posicao" class="pequeno" aria-live="polite"></span><span class="espaco"></span>
+				<span id="sessao" class="pequeno texto-suave"></span>
+			</div>
+			<div class="progresso" aria-hidden="true"><span id="barra-progresso" style="width:0"></span></div>
+		</div>
+		<section id="cartao-foco" class="cartao foco-cartao" aria-labelledby="foco-etiqueta"></section>
+		<p class="pequeno texto-suave" style="text-align:center;margin-top:1rem">
+			Atalhos: <kbd>N</kbd> próximo · <kbd>P</kbd> anterior · <kbd>X</kbd> executar a ação · <kbd>A</kbd> abrir o expediente · <kbd>D</kbd> adiar para amanhã
+		</p>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/foco.js"></script>
+</body>
+</html>

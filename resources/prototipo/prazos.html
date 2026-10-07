@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Prazos · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Calendário de prazos</h1>
+				<p>Prazos em aberto dos três gerenciadores, com indicadores visuais e exportação iCal.</p>
+			</div>
+		</div>
+		<section class="cartao" aria-labelledby="t-filtros-prazo" style="margin-bottom:1rem">
+			<h2 id="t-filtros-prazo" class="sr-only">Filtros do calendário</h2>
+			<div class="barra" style="margin:0">
+				<div class="campo"><label for="escopo">Escopo</label>
+					<select id="escopo"><option value="setor">Todo o setor</option><option value="meus">Somente meus</option></select></div>
+				<div class="campo"><label for="gerenciador">Gerenciador</label><select id="gerenciador"></select></div>
+				<span class="espaco"></span>
+				<div class="grupo-botoes" style="align-self:flex-end">
+					<button type="button" class="btn" id="mes-anterior">Mês anterior</button>
+					<button type="button" class="btn" id="mes-hoje">Hoje</button>
+					<button type="button" class="btn" id="mes-proximo">Próximo mês</button>
+				</div>
+			</div>
+		</section>
+		<div class="grade" style="grid-template-columns:minmax(0,2fr) minmax(300px,1fr)">
+			<section class="cartao" aria-labelledby="titulo-mes">
+				<header><h2 id="titulo-mes"></h2><span class="legenda" id="legenda-prazo"></span></header>
+				<div id="calendario"></div>
+			</section>
+			<div class="grade" style="align-content:start">
+				<section class="cartao" aria-labelledby="titulo-dia">
+					<h2 id="titulo-dia">Prazos do dia</h2>
+					<p id="resumo-dia" class="pequeno" aria-live="polite"></p>
+					<div id="lista-dia"></div>
+				</section>
+				<section class="cartao" aria-labelledby="titulo-ics">
+					<h2 id="titulo-ics">Exportar para o calendário (iCal)</h2>
+					<div class="campo"><label for="ics-periodo">Período</label>
+						<select id="ics-periodo">
+							<option value="mes">Mês exibido</option>
+							<option value="30">Próximos 30 dias</option>
+							<option value="abertos">Todos os prazos em aberto (inclui vencidos)</option>
+						</select></div>
+					<p class="pequeno" id="ics-info"></p>
+					<button type="button" class="btn btn-primario" id="btn-ics">Baixar arquivo .ics</button>
+					<details class="pequeno" style="margin-top:.5rem"><summary>Pré-visualizar conteúdo</summary>
+						<pre id="ics-previa" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--superficie-2);padding:.5rem;border-radius:6px"></pre></details>
+				</section>
+			</div>
+		</div>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/prazos.js"></script>
+</body>
+</html>

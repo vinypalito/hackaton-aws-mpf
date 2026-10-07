@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Ações em lote · Expedientes (protótipo)</title>
+	<link rel="stylesheet" href="assets/estilo.css">
+</head>
+<body>
+	<div id="topo"></div>
+	<main id="conteudo" tabindex="-1">
+		<div class="cabecalho-pagina">
+			<div>
+				<h1>Trilha de ações em lote</h1>
+				<p>Cada lote registra quem fez, quando, parâmetros e o resultado por expediente (acoes_lote). Os lotes desta sessão podem ser desfeitos.</p>
+			</div>
+			<button type="button" class="btn btn-perigo" id="btn-resetar">Apagar dados locais do protótipo</button>
+		</div>
+		<section class="cartao" aria-labelledby="t-locais" style="margin-bottom:1rem">
+			<h2 id="t-locais" tabindex="-1">Lotes desta sessão</h2>
+			<p id="resumo-locais" class="pequeno" aria-live="polite"></p>
+			<div id="locais"></div>
+		</section>
+		<section class="cartao" aria-labelledby="t-historico">
+			<header><h2 id="t-historico">Histórico do setor</h2>
+				<div class="campo"><label for="filtro-acao">Ação</label><select id="filtro-acao"></select></div></header>
+			<p class="pequeno texto-suave">Registros da base (somente leitura). No backend, desfazer usaria o "antes" gravado em cada item do lote.</p>
+			<div id="historico"></div>
+		</section>
+	</main>
+	<div id="avisos" class="avisos" aria-live="polite"></div>
+	<script src="dados/dados.js"></script>
+	<script src="assets/app.js"></script>
+	<script src="assets/lotes.js"></script>
+</body>
+</html>
