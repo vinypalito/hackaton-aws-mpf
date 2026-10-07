@@ -1,0 +1,1085 @@
+openapi: 3.0.3
+info:
+  title: API do Painel Unificado de Expedientes
+  version: 0.1.0-rascunho
+  description: |
+    RASCUNHO do contrato mínimo da API (trilha D, Maluco), para destravar o frontend (Raphael) com mocks
+    e alinhar o domínio (Maurão) e o repositório (Vini). Não é a versão final.
+
+    Escopo deste rascunho: `/me`, `/contadores`, `/home`, `/expedientes`, `/expedientes/{id}` e `/lotes*`.
+    Fica de fora por enquanto: filtros salvos, preferências, alertas, calendário, indicadores, exportações e IA.
+
+    Regras que valem para todas as rotas (design.md, seção 4.3):
+    - Todas exigem token Cognito. Setor, perfil e usuário vêm só das *claims*, nunca do corpo nem da URL.
+    - Todo handler valida a entrada, chama `autorizar`, chama domínio ou repositório, aplica `mascararSigilo` e responde.
+    - Expediente de outro setor responde 404, igual a inexistente (RN6). Operação negada no próprio setor responde 403.
+    - Erros seguem `Erro`: `{codigo, mensagem, correlationId, campos?}`, sem *stack trace*.
+    - Toda resposta devolve o cabeçalho `X-Correlation-Id`.
+    - Base 100% sintética. Data de referência dos dados: 2026-10-07T17:00:00-03:00.
+servers:
+  - url: /api/v1
+    description: Base relativa (CloudFront e API Gateway)
+security:
+  - cognito: []
+tags:
+  - name: Sessão
+  - name: Tela inicial
+  - name: Painel
+  - name: Lotes
+
+paths:
+  /me:
+    get:
+      tags: [Sessão]
+      operationId: obterMe
+      summary: Usuário, setor, perfil e data de referência
+      description: Requisito 1. Lê `USR#<id>/PERFIL` e `SETOR#<sigla>/PERFIL`.
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /contadores:
+    get:
+      tags: [Painel]
+      operationId: obterContadores
+      summary: Contadores das caixas do setor
+      description: |
+        Requisito 4. Lê `SETOR#<sigla>/CONT#<gerenciador>` (`CONT#TODOS` na visão unificada).
+        Baixados não entram nos contadores do painel (RN7), exceto `baixados30dias`.
+      parameters:
+        - $ref: '#/components/parameters/Gerenciador'
+      responses:
+        '200':
+          description: Contadores da visão pedida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contadores' }
+        '400': { $ref: '#/components/responses/Validacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /home:
+    get:
+      tags: [Tela inicial]
+      operationId: obterHome
+      summary: Widgets agregados da tela inicial
+      description: |
+        Requisito 20. Cada widget traz o próprio estado, para que o erro de um não derrube a tela.
+        `proximosPrazos` vem do GSI2 filtrado por `requerAcao` (10 itens) e `alertas` traz os 5 não lidos mais recentes.
+      responses:
+        '200':
+          description: Tela inicial
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Home' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /expedientes:
+    get:
+      tags: [Painel]
+      operationId: listarExpedientes
+      summary: Painel de expedientes do setor
+      description: |
+        Requisitos 3 e 5. Atendido pelo índice de busca do setor em memória (design 3.4).
+        Filtros de campos diferentes combinam com E. Valores repetidos do mesmo campo combinam com OU.
+        Campo ou valor fora da lista permitida responde 400 com o campo em `campos`.
+        Expedientes com `nivelSigilo > 0` casam a pesquisa livre só por etiqueta, número de referência, classe,
+        órgão de origem e nome do responsável (Req. 5.9).
+        O filtro `favorito` significa "favoritado por mim" (Req. 5.2).
+        A caixa `BAIXADO` é só histórico: sem ações em lote.
+      parameters:
+        - name: visao
+          in: query
+          description: Gerenciador a exibir. Vale apenas o que o setor do usuário possui.
+          schema:
+            type: string
+            enum: [TODOS, JUDICIAL, DOCUMENTO, EXTRAJUDICIAL]
+            default: TODOS
+        - name: caixa
+          in: query
+          description: Se omitida, usa a `caixaInicial` das preferências do usuário.
+          schema: { $ref: '#/components/schemas/Caixa' }
+        - name: atalho
+          in: query
+          description: '"Meus expedientes" (idResponsavel igual ao usuário) ou "Designados para mim" (GSI1 `USR#<id>`).'
+          schema:
+            type: string
+            enum: [MEUS, DESIGNADOS_PARA_MIM]
+        - name: q
+          in: query
+          description: Texto livre, sem diferenciar maiúsculas, minúsculas e acentos.
+          schema: { type: string, maxLength: 200 }
+        - name: situacao
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/Situacao' }
+        - name: statusPrazo
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/StatusPrazo' }
+        - name: prioridade
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/Prioridade' }
+        - name: idResponsavel
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: assunto
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: classe
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: tema
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: idRotulo
+          in: query
+          description: Marcador aplicado ao expediente.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: dataChegadaDe
+          in: query
+          schema: { type: string, format: date }
+        - name: dataChegadaAte
+          in: query
+          schema: { type: string, format: date }
+        - name: dataPrazoDe
+          in: query
+          schema: { type: string, format: date }
+        - name: dataPrazoAte
+          in: query
+          schema: { type: string, format: date }
+        - name: tempoParadoMin
+          in: query
+          description: Dias parado, maior ou igual a (sufixo `Min` = "maior ou igual a").
+          schema: { type: integer, minimum: 0 }
+        - name: urgente
+          in: query
+          schema: { type: boolean }
+        - name: reuPreso
+          in: query
+          schema: { type: boolean }
+        - name: idoso
+          in: query
+          schema: { type: boolean }
+        - name: novaIntimacao
+          in: query
+          schema: { type: boolean }
+        - name: sigiloso
+          in: query
+          schema: { type: boolean }
+        - name: favorito
+          in: query
+          description: Favoritado por mim.
+          schema: { type: boolean }
+        - name: ordem
+          in: query
+          description: '`campo:direcao`. Desempate estável por `idExpediente`. Padrão: `pontuacaoPrioridade:desc`.'
+          schema:
+            type: string
+            enum:
+              - pontuacaoPrioridade:desc
+              - pontuacaoPrioridade:asc
+              - dataPrazo:asc
+              - dataPrazo:desc
+              - dataChegada:asc
+              - dataChegada:desc
+              - tempoParadoDias:desc
+              - tempoParadoDias:asc
+            default: pontuacaoPrioridade:desc
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Página de resultados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaExpedientes' }
+        '400': { $ref: '#/components/responses/Validacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '429': { $ref: '#/components/responses/LimiteExcedido' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /expedientes/{idExpediente}:
+    get:
+      tags: [Painel]
+      operationId: obterExpediente
+      summary: Detalhe do expediente com histórico
+      description: |
+        Requisito 13. Uma `Query` em `EXP#<id>` (META, MOV#, PRZ#, DES#, ANO#, ROT#).
+        Se for sigiloso e o usuário não puder ver o conteúdo, a máscara cobre o detalhe, as anotações
+        e as descrições do histórico (`mascarado: true`).
+        Expediente de outro setor ou inexistente responde 404 igual, sem revelar se existe.
+      parameters:
+        - $ref: '#/components/parameters/IdExpediente'
+      responses:
+        '200':
+          description: Detalhe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpedienteDetalhe' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /lotes/preview:
+    post:
+      tags: [Lotes]
+      operationId: previsualizarLote
+      summary: Pré-visualização do lote, sem nenhum efeito
+      description: |
+        Requisito 15.1 a 15.4. Relê o `META` de cada item, avalia elegibilidade e autorização item a item
+        e devolve `alterados` ("Serão alterados") e `ignorados` ("Serão ignorados"). Usa as mesmas regras da execução.
+        Mais de 200 itens responde 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoteSolicitacao' }
+      responses:
+        '200':
+          description: Pré-visualização
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LotePreview' }
+        '400': { $ref: '#/components/responses/Validacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '429': { $ref: '#/components/responses/LimiteExcedido' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /lotes:
+    post:
+      tags: [Lotes]
+      operationId: executarLote
+      summary: Executa o lote
+      description: |
+        Requisito 14. Executa só os itens enviados em `itens`, cada um condicionado à `versao` lida na
+        pré-visualização. Item alterado depois vira `IGNORADO` com o motivo "Alterado depois da pré-visualização".
+        Cada expediente é uma unidade atômica; falha parcial entre expedientes é permitida.
+
+        - Até 50 itens: execução síncrona, resposta 200 com o lote concluído.
+        - De 51 a 200 itens: resposta 202 com o lote `PENDENTE`. Acompanhe por `GET /lotes/{idLote}`.
+        - Mais de 200 itens: 400.
+
+        A mesma `Idempotency-Key` nunca gera efeito duplicado e retoma um lote interrompido.
+        Repetir a chamada devolve o estado atual do lote com o mesmo status que a primeira resposta teve.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoteExecucao' }
+      responses:
+        '200':
+          description: Lote síncrono concluído (`SUCESSO` ou `PARCIAL`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lote' }
+        '202':
+          description: Lote aceito para processamento assíncrono
+          headers:
+            Location:
+              description: Caminho para acompanhar o lote
+              schema: { type: string, example: /api/v1/lotes/LOT000123 }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lote' }
+        '400': { $ref: '#/components/responses/Validacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '409':
+          description: |
+            A `Idempotency-Key` já foi usada com outro corpo, ou outro processamento do mesmo lote está em andamento.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
+        '429': { $ref: '#/components/responses/LimiteExcedido' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+    get:
+      tags: [Lotes]
+      operationId: listarLotes
+      summary: Trilha de lotes do usuário ou do setor
+      description: |
+        Requisito 15.11. Os 52 lotes do seed aparecem com `podeDesfazer: false`.
+        Lê `USR#<id>/LOTE#…` (meus) ou o GSI1 `SETOR#<sigla>` com prefixo `LOTE#` (setor).
+      parameters:
+        - name: escopo
+          in: query
+          schema:
+            type: string
+            enum: [meus, setor]
+            default: meus
+        - name: tipoAcao
+          in: query
+          schema: { $ref: '#/components/schemas/TipoAcaoLote' }
+        - name: resultado
+          in: query
+          schema: { $ref: '#/components/schemas/ResultadoLote' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Página de lotes, do mais recente para o mais antigo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaLotes' }
+        '400': { $ref: '#/components/responses/Validacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /lotes/{idLote}:
+    get:
+      tags: [Lotes]
+      operationId: obterLote
+      summary: Status e resultado por item de um lote
+      description: Requisito 29.7. Lê `LOTE#<id>/STATUS` e os `ITEM#`. Lote de outro setor responde 404.
+      parameters:
+        - $ref: '#/components/parameters/IdLote'
+      responses:
+        '200':
+          description: Lote com itens
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lote' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+  /lotes/{idLote}/desfazer:
+    post:
+      tags: [Lotes]
+      operationId: desfazerLote
+      summary: Desfaz um lote
+      description: |
+        Requisito 15.5 a 15.9. Só o autor do lote ou um `CHEFE` do setor, em até 24 horas depois da conclusão.
+        Cada item é restaurado de forma condicional a `versaoDepois`. Item alterado por outra ação depois do lote
+        fica como está e vira `IGNORADO` com o motivo "Alterado depois do lote".
+        Grava um novo lote com `tipoAcao = DESFAZER` e `parametros.desfazer = <idLote original>`.
+        Desfazer duas vezes não gera efeito extra. Lotes do seed não têm estado anterior e não podem ser desfeitos.
+      parameters:
+        - $ref: '#/components/parameters/IdLote'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Lote de desfazer concluído
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lote' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/Negado' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409':
+          description: Fora da janela de 24 horas, lote sem estado anterior ou já desfeito
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
+        '500': { $ref: '#/components/responses/ErroInterno' }
+
+components:
+  securitySchemes:
+    cognito:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de acesso do Cognito User Pool (PKCE). Claims usadas: `custom:idUsuario`, `custom:siglaSetor`
+        e `custom:perfil`. O cliente nunca envia setor, perfil nem usuário.
+
+  parameters:
+    Gerenciador:
+      name: gerenciador
+      in: query
+      schema:
+        type: string
+        enum: [TODOS, JUDICIAL, DOCUMENTO, EXTRAJUDICIAL]
+        default: TODOS
+    IdExpediente:
+      name: idExpediente
+      in: path
+      required: true
+      schema: { type: string, example: EXP000001 }
+    IdLote:
+      name: idLote
+      in: path
+      required: true
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Chave gerada pelo cliente (UUID). Guardada em `IDEMP#<chave>` por 24 horas.
+      schema: { type: string, minLength: 8, maxLength: 128 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Cursor opaco devolvido pela página anterior. Não interpretar nem montar no cliente.
+      schema: { type: string, maxLength: 1024 }
+    Limite:
+      name: limite
+      in: query
+      description: Tamanho da página. Se omitido, usa `itensPorPagina` das preferências.
+      schema: { type: integer, minimum: 1, maximum: 100 }
+
+  responses:
+    Validacao:
+      description: 400. Entrada inválida. `campos` indica quais.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+          example:
+            codigo: VALIDACAO
+            mensagem: Valor fora da lista permitida
+            correlationId: 5f1c2d1e-0000-0000-0000-000000000000
+            campos:
+              - campo: statusPrazo
+                mensagem: Valor inválido
+    NaoAutenticado:
+      description: 401. Sem token ou token inválido.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    Negado:
+      description: 403. Operação negada para o perfil, dentro do próprio setor.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    NaoEncontrado:
+      description: |
+        404. Recurso inexistente ou de outro setor, sem revelar qual. Texto padrão para expediente:
+        "Expediente não encontrado ou sem acesso".
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    LimiteExcedido:
+      description: 429. Limite de requisições do plano de uso.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    ErroInterno:
+      description: 500 genérico, sem *stack trace*. O detalhe fica só no log, com o `correlationId`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+
+  schemas:
+    Erro:
+      type: object
+      required: [codigo, mensagem, correlationId]
+      properties:
+        codigo:
+          type: string
+          description: Código estável legível por máquina.
+          example: VALIDACAO
+        mensagem:
+          type: string
+          description: Texto em português do Brasil, seguro para exibir.
+        correlationId:
+          type: string
+        campos:
+          type: array
+          description: Erros por campo, ligados ao `aria-describedby` na SPA.
+          items:
+            type: object
+            required: [campo, mensagem]
+            properties:
+              campo: { type: string }
+              mensagem: { type: string }
+
+    # ---------- Catálogos (catalogos.csv) ----------
+    Gerenciador:
+      type: string
+      enum: [JUDICIAL, DOCUMENTO, EXTRAJUDICIAL]
+    Caixa:
+      type: string
+      enum: [A_RECEBER, NO_SETOR, ENVIADO_NAO_RECEBIDO, BAIXADO]
+    StatusPrazo:
+      type: string
+      enum: [VENCIDO, VENCE_HOJE, CRITICO, ATENCAO, NO_PRAZO, CUMPRIDO, CUMPRIDO_COM_ATRASO]
+    Prioridade:
+      type: string
+      enum: [CRITICA, ALTA, MEDIA, BAIXA]
+    Situacao:
+      type: string
+      enum:
+        - AGUARDANDO_ASSINATURA
+        - AGUARDANDO_CIENCIA
+        - AGUARDANDO_RECEBIMENTO
+        - AGUARDANDO_RESPOSTA_EXTERNA
+        - CONCLUIDO_ARQUIVADO
+        - CONCLUIDO_ENVIADO
+        - EM_ANALISE
+        - EM_DILIGENCIA
+        - ENVIADO
+        - MINUTA_EM_ELABORACAO
+        - PRONTO_PARA_ENVIO
+    Perfil:
+      type: string
+      enum: [CHEFE, MEMBRO, SERVIDOR]
+    TipoAcaoLote:
+      type: string
+      description: As sete ações do Req. 14, mais `DESFAZER`, gravada pelo desfazer.
+      enum: [RECEBER, DESIGNAR, INCLUIR_MARCADOR, DAR_CIENCIA, ASSINAR, MOVIMENTAR, ARQUIVAR, DESFAZER]
+    TipoAcaoLoteSolicitavel:
+      type: string
+      enum: [RECEBER, DESIGNAR, INCLUIR_MARCADOR, DAR_CIENCIA, ASSINAR, MOVIMENTAR, ARQUIVAR]
+    ResultadoLote:
+      type: string
+      enum: [SUCESSO, PARCIAL]
+    StatusExecucaoLote:
+      type: string
+      enum: [PENDENTE, EM_PROCESSAMENTO, CONCLUIDO]
+    StatusItemLote:
+      type: string
+      enum: [SUCESSO, IGNORADO, FALHA]
+    TipoMovimentacao:
+      type: string
+      description: Catálogo `TIPO_MOVIMENTACAO`, mais `CIENCIA` e `REVERSAO_LOTE` (migração, Req. 2).
+      enum:
+        - CADASTRO
+        - ENVIO_AO_SETOR
+        - RECEBIMENTO
+        - DESIGNACAO
+        - MARCADOR_INCLUIDO
+        - ANOTACAO_INCLUIDA
+        - MINUTA_CRIADA
+        - ASSINATURA
+        - PRAZO_PRORROGADO
+        - ENVIO_PELO_SETOR
+        - ARQUIVAMENTO
+        - CIENCIA
+        - REVERSAO_LOTE
+    SeveridadeNotificacao:
+      type: string
+      enum: [CRITICO, ATENCAO, INFO]
+    TipoNotificacao:
+      type: string
+      enum:
+        - NOVO_EXPEDIENTE
+        - NOVA_INTIMACAO
+        - PRAZO_VENCIDO
+        - PRAZO_VENCE_HOJE
+        - PRAZO_PROXIMO
+        - DESIGNACAO
+        - DEVOLUCAO_VENCIDA
+        - ALTERACAO
+        - ENVIO_PENDENTE
+
+    # ---------- Sessão ----------
+    Me:
+      type: object
+      required: [idUsuario, nome, siglaSetor, perfil, gerenciadores, dataReferencia]
+      properties:
+        idUsuario: { type: string, example: GABSUB3-DVT-U02 }
+        nome: { type: string }
+        cargo: { type: string }
+        siglaSetor: { type: string, example: GABSUB3-DVT }
+        nomeSetor: { type: string }
+        perfil: { $ref: '#/components/schemas/Perfil' }
+        gerenciadores:
+          type: array
+          description: Gerenciadores que o setor possui. O seletor de visão só mostra estes.
+          items: { $ref: '#/components/schemas/Gerenciador' }
+        dataReferencia:
+          type: string
+          format: date-time
+          description: Data de referência dos dados (`DATA_REFERENCIA`).
+          example: '2026-10-07T17:00:00-03:00'
+        baseSintetica:
+          type: boolean
+          description: Sempre true. A SPA exibe "Base 100% sintética".
+          default: true
+
+    # ---------- Contadores ----------
+    Contadores:
+      type: object
+      description: Item `CONT#<gerenciador>` do setor.
+      required: [gerenciador, aReceber, noSetor, enviadosNaoRecebidos]
+      properties:
+        gerenciador:
+          type: string
+          enum: [TODOS, JUDICIAL, DOCUMENTO, EXTRAJUDICIAL]
+        aReceber: { type: integer, minimum: 0 }
+        noSetor: { type: integer, minimum: 0 }
+        enviadosNaoRecebidos: { type: integer, minimum: 0 }
+        designados: { type: integer, minimum: 0 }
+        favoritos: { type: integer, minimum: 0 }
+        vencidos: { type: integer, minimum: 0 }
+        venceHoje: { type: integer, minimum: 0 }
+        criticos: { type: integer, minimum: 0 }
+        atencao: { type: integer, minimum: 0 }
+        urgentes: { type: integer, minimum: 0 }
+        prioridadeCritica: { type: integer, minimum: 0 }
+        novos24h: { type: integer, minimum: 0 }
+        parados30dias: { type: integer, minimum: 0 }
+        minutasPendentes: { type: integer, minimum: 0 }
+        baixados30dias: { type: integer, minimum: 0 }
+
+    # ---------- Tela inicial ----------
+    Home:
+      type: object
+      required: [contadores, proximosPrazos, alertas, informes]
+      properties:
+        contadores: { $ref: '#/components/schemas/WidgetContadores' }
+        proximosPrazos: { $ref: '#/components/schemas/WidgetProximosPrazos' }
+        alertas: { $ref: '#/components/schemas/WidgetAlertas' }
+        proximoExpediente: { $ref: '#/components/schemas/WidgetProximoExpediente' }
+        informes: { $ref: '#/components/schemas/WidgetInformes' }
+    WidgetEstado:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          type: string
+          description: '`ERRO` isola a falha do widget (Req. 20.8). Os demais seguem normais.'
+          enum: [OK, VAZIO, ERRO]
+        mensagemErro:
+          type: string
+    WidgetContadores:
+      allOf:
+        - $ref: '#/components/schemas/WidgetEstado'
+        - type: object
+          properties:
+            dados: { $ref: '#/components/schemas/Contadores' }
+    WidgetProximosPrazos:
+      allOf:
+        - $ref: '#/components/schemas/WidgetEstado'
+        - type: object
+          properties:
+            dados:
+              type: array
+              maxItems: 10
+              items: { $ref: '#/components/schemas/ExpedienteResumo' }
+    WidgetAlertas:
+      allOf:
+        - $ref: '#/components/schemas/WidgetEstado'
+        - type: object
+          properties:
+            totalNaoLidos: { type: integer, minimum: 0 }
+            dados:
+              type: array
+              maxItems: 5
+              items: { $ref: '#/components/schemas/Alerta' }
+    WidgetProximoExpediente:
+      allOf:
+        - $ref: '#/components/schemas/WidgetEstado'
+        - type: object
+          properties:
+            dados: { $ref: '#/components/schemas/ExpedienteResumo' }
+    WidgetInformes:
+      allOf:
+        - $ref: '#/components/schemas/WidgetEstado'
+        - type: object
+          properties:
+            dados:
+              type: array
+              items: { $ref: '#/components/schemas/Informe' }
+    Alerta:
+      type: object
+      required: [idNotificacao, tipoNotificacao, severidade, titulo, mensagem, dataHora, lida]
+      properties:
+        idNotificacao: { type: string }
+        tipoNotificacao: { $ref: '#/components/schemas/TipoNotificacao' }
+        severidade: { $ref: '#/components/schemas/SeveridadeNotificacao' }
+        titulo: { type: string }
+        mensagem: { type: string, description: Mascarada se o expediente for sigiloso. }
+        idExpediente: { type: string }
+        etiqueta: { type: string }
+        dataHora: { type: string, format: date-time }
+        lida: { type: boolean }
+        link: { type: string }
+    Informe:
+      type: object
+      required: [idNoticia, titulo, categoria, conteudo]
+      properties:
+        idNoticia: { type: string }
+        titulo: { type: string }
+        categoria: { type: string }
+        conteudo: { type: string }
+        prioridade: { type: string }
+        destaque: { type: boolean }
+        dataInicioExibicao: { type: string, format: date }
+        dataFimExibicao: { type: string, format: date }
+
+    # ---------- Expedientes ----------
+    ComposicaoPrioridade:
+      type: object
+      description: Resultado de `calcularPontuacao`. Mostra por que o expediente tem aquela prioridade (Req. 8).
+      required: [total, faixa, composicao]
+      properties:
+        total: { type: integer, minimum: 0, maximum: 100 }
+        faixa: { $ref: '#/components/schemas/Prioridade' }
+        composicao:
+          type: array
+          items:
+            type: object
+            required: [regra, pontos]
+            properties:
+              regra: { type: string, example: Prazo vencido }
+              pontos: { type: integer }
+    Risco:
+      type: object
+      description: Resultado de `calcularRisco`. Fica fora do MVP.
+      required: [indice, faixa]
+      properties:
+        indice: { type: integer, minimum: 0, maximum: 100 }
+        faixa:
+          type: string
+          enum: [ALTO, MEDIO, BAIXO]
+    Marcador:
+      type: object
+      required: [idRotulo, descricao]
+      properties:
+        idRotulo: { type: string }
+        descricao: { type: string }
+        cor: { type: string, description: Cor do catálogo, par com texto e ícone. }
+    ExpedienteResumo:
+      type: object
+      description: Linha do painel e dos widgets. Mesmos nomes do `expedientes.csv`.
+      required:
+        - idExpediente
+        - gerenciador
+        - caixa
+        - etiqueta
+        - statusPrazo
+        - prioridade
+        - pontuacaoPrioridade
+        - versao
+        - sigiloso
+        - mascarado
+      properties:
+        idExpediente: { type: string }
+        versao:
+          type: integer
+          minimum: 1
+          description: Versão otimista do `META`. O lote devolve esta versão para a execução condicional.
+        gerenciador: { $ref: '#/components/schemas/Gerenciador' }
+        caixa: { $ref: '#/components/schemas/Caixa' }
+        situacao: { $ref: '#/components/schemas/Situacao' }
+        acaoPendente: { type: string }
+        requerAcao: { type: boolean }
+        etiqueta: { type: string }
+        numeroReferencia: { type: string }
+        classe: { type: string }
+        assunto: { type: string }
+        tema: { type: string }
+        resumo: { type: string }
+        orgaoOrigem: { type: string }
+        setorOrigem: { type: string }
+        setorDestino: { type: string }
+        dataChegada: { type: string, format: date }
+        dataRecebimento: { type: string, format: date }
+        dataUltimaMovimentacao: { type: string, format: date-time }
+        diasNoSetor: { type: integer }
+        tempoParadoDias: { type: integer }
+        dataPrazo: { type: string, format: date }
+        diasRestantes: { type: integer }
+        statusPrazo: { $ref: '#/components/schemas/StatusPrazo' }
+        prioridade: { $ref: '#/components/schemas/Prioridade' }
+        pontuacaoPrioridade: { type: integer, minimum: 0, maximum: 100 }
+        urgente: { type: boolean }
+        reuPreso: { type: boolean }
+        idoso: { type: boolean }
+        novaIntimacao: { type: boolean }
+        novo: { type: boolean }
+        idResponsavel: { type: string }
+        nomeResponsavel: { type: string }
+        designado: { type: boolean }
+        eletronico: { type: boolean }
+        sigiloso: { type: boolean }
+        favorito:
+          type: boolean
+          description: Favoritado por mim na resposta da API. O booleano do CSV ("favoritado no setor") não é exposto.
+        marcadores:
+          type: array
+          items: { $ref: '#/components/schemas/Marcador' }
+        qtdAnotacoes: { type: integer }
+        qtdMinutasPendentes: { type: integer }
+        mascarado:
+          type: boolean
+          description: |
+            True quando o expediente é sigiloso e o usuário não pode ver o conteúdo. Nesse caso `assunto`,
+            `resumo` e `tema` voltam como "Conteúdo sigiloso" (campos D1). A SPA não reimplementa a regra.
+    PaginaExpedientes:
+      type: object
+      required: [itens, total, versaoIndice]
+      properties:
+        itens:
+          type: array
+          items: { $ref: '#/components/schemas/ExpedienteResumo' }
+        total:
+          type: integer
+          minimum: 0
+          description: Total exato da versão do índice usada (Req. 5.12).
+        versaoIndice:
+          type: integer
+          description: Versão do índice de busca que respondeu. Se mudar entre páginas, o cliente recebe aviso.
+        indiceAtualizado:
+          type: boolean
+          description: False quando o índice mudou entre uma página e outra. A SPA avisa e oferece recarregar.
+        proximoCursor:
+          type: string
+          nullable: true
+          description: Cursor opaco `{versaoIndice, ultimaChave, idExpediente}`. Nulo na última página.
+        visao:
+          type: string
+          enum: [TODOS, JUDICIAL, DOCUMENTO, EXTRAJUDICIAL]
+        caixa: { $ref: '#/components/schemas/Caixa' }
+    Movimentacao:
+      type: object
+      required: [idMovimentacao, dataHora, tipoMovimentacao]
+      properties:
+        idMovimentacao: { type: string }
+        dataHora: { type: string, format: date-time }
+        tipoMovimentacao: { $ref: '#/components/schemas/TipoMovimentacao' }
+        nomeUsuario: { type: string }
+        setorOrigem: { type: string }
+        setorDestino: { type: string }
+        descricao: { type: string, description: Mascarada se o expediente for sigiloso. }
+    Prazo:
+      type: object
+      required: [idPrazo, tipoPrazo, dataPrazo, situacao]
+      properties:
+        idPrazo: { type: string }
+        tipoPrazo:
+          type: string
+          enum: [PROCESSUAL, RESPOSTA, TRAMITACAO]
+        dataInicio: { type: string, format: date }
+        dataPrazo: { type: string, format: date }
+        duracaoDias: { type: integer }
+        situacao:
+          type: string
+          enum: [ABERTO, PRORROGADO, CUMPRIDO_NO_PRAZO, CUMPRIDO_COM_ATRASO]
+        dataEncerramento: { type: string, format: date, nullable: true }
+        diasAtraso: { type: integer, nullable: true }
+    Designacao:
+      type: object
+      required: [idDesignacao, situacao]
+      properties:
+        idDesignacao: { type: string }
+        idUsuarioDesignado: { type: string }
+        nomeDesignado: { type: string }
+        nomeDesignador: { type: string }
+        dataDesignacao: { type: string, format: date }
+        prazoDevolucao: { type: string, format: date }
+        diasParaDevolucao: { type: integer }
+        situacao: { type: string, description: 'Por exemplo ATIVA ou ENCERRADA.' }
+        statusDevolucao: { type: string }
+        dataFim: { type: string, format: date, nullable: true }
+    Anotacao:
+      type: object
+      required: [idAnotacao, dataHora, nomeUsuario, texto]
+      properties:
+        idAnotacao: { type: string }
+        dataHora: { type: string, format: date-time }
+        nomeUsuario: { type: string }
+        texto: { type: string, description: Mascarada se o expediente for sigiloso. }
+    ExpedienteDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/ExpedienteResumo'
+        - type: object
+          required: [movimentacoes, prazos, designacoes, anotacoes, composicaoPrioridade]
+          properties:
+            classe: { type: string }
+            descricaoClasse: { type: string }
+            tipoEntrada: { type: string }
+            tipoPrazo: { type: string }
+            tipoResponsabilidade: { type: string }
+            nivelSigilo: { type: integer, minimum: 0 }
+            motivoUrgencia: { type: string }
+            dataAutuacao: { type: string, format: date }
+            composicaoPrioridade: { $ref: '#/components/schemas/ComposicaoPrioridade' }
+            risco: { $ref: '#/components/schemas/Risco' }
+            movimentacoes:
+              type: array
+              description: Ordem cronológica.
+              items: { $ref: '#/components/schemas/Movimentacao' }
+            prazos:
+              type: array
+              items: { $ref: '#/components/schemas/Prazo' }
+            designacoes:
+              type: array
+              items: { $ref: '#/components/schemas/Designacao' }
+            anotacoes:
+              type: array
+              items: { $ref: '#/components/schemas/Anotacao' }
+
+    # ---------- Lotes ----------
+    ParametrosLote:
+      type: object
+      description: |
+        Parâmetros por ação. Campo obrigatório por ação:
+        `DESIGNAR` exige `idUsuarioDesignado` e `prazoDevolucao`; `INCLUIR_MARCADOR` exige `idRotulo`;
+        `MOVIMENTAR` exige `setorDestino`. As demais ações não usam parâmetros.
+        O backend valida isso e responde 400 com o campo em `campos`.
+      additionalProperties: false
+      properties:
+        idUsuarioDesignado: { type: string }
+        prazoDevolucao: { type: string, format: date }
+        idRotulo: { type: string }
+        setorDestino: { type: string }
+    LoteSolicitacao:
+      type: object
+      required: [tipoAcao, idsExpedientes]
+      properties:
+        tipoAcao: { $ref: '#/components/schemas/TipoAcaoLoteSolicitavel' }
+        idsExpedientes:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          items: { type: string }
+        parametros: { $ref: '#/components/schemas/ParametrosLote' }
+    ItemAlterado:
+      type: object
+      required: [idExpediente, etiqueta, efeito, versao]
+      properties:
+        idExpediente: { type: string }
+        etiqueta: { type: string }
+        versao:
+          type: integer
+          description: Versão lida. Volta no `POST /lotes` para a execução condicional.
+        efeito:
+          type: string
+          description: Texto do efeito, por exemplo "A receber → No setor".
+    ItemIgnorado:
+      type: object
+      required: [idExpediente, etiqueta, motivo]
+      properties:
+        idExpediente: { type: string }
+        etiqueta: { type: string }
+        motivo:
+          type: string
+          example: Não está na caixa A receber
+    LotePreview:
+      type: object
+      required: [tipoAcao, alterados, ignorados]
+      properties:
+        tipoAcao: { $ref: '#/components/schemas/TipoAcaoLoteSolicitavel' }
+        alterados:
+          type: array
+          description: Lista "Serão alterados", com o efeito em cada item.
+          items: { $ref: '#/components/schemas/ItemAlterado' }
+        ignorados:
+          type: array
+          description: Lista "Serão ignorados", com o motivo de cada item.
+          items: { $ref: '#/components/schemas/ItemIgnorado' }
+        assincrono:
+          type: boolean
+          description: True quando a execução passa de 50 itens (resposta 202).
+    LoteExecucao:
+      type: object
+      required: [tipoAcao, itens]
+      properties:
+        tipoAcao: { $ref: '#/components/schemas/TipoAcaoLoteSolicitavel' }
+        itens:
+          type: array
+          minItems: 1
+          maxItems: 200
+          description: Só os itens de `alterados` da pré-visualização, cada um com a versão lida nela.
+          items:
+            type: object
+            required: [idExpediente, versao]
+            properties:
+              idExpediente: { type: string }
+              versao: { type: integer, minimum: 1 }
+        parametros: { $ref: '#/components/schemas/ParametrosLote' }
+    ItemLote:
+      type: object
+      required: [idExpediente, status]
+      properties:
+        idExpediente: { type: string }
+        etiqueta: { type: string }
+        status: { $ref: '#/components/schemas/StatusItemLote' }
+        motivo:
+          type: string
+          description: Obrigatório em `IGNORADO` e `FALHA`.
+          example: Alterado depois da pré-visualização
+    Lote:
+      type: object
+      description: Trilha de `acoes_lote` mais o status de execução. Itens vêm apenas em `GET /lotes/{idLote}` e nas respostas de execução.
+      required: [idLote, tipoAcao, idUsuario, nomeUsuario, dataHora, qtdExpedientes, podeDesfazer]
+      properties:
+        idLote: { type: string }
+        siglaSetor: { type: string }
+        idUsuario: { type: string }
+        nomeUsuario: { type: string }
+        tipoAcao: { $ref: '#/components/schemas/TipoAcaoLote' }
+        parametros:
+          type: object
+          additionalProperties: true
+          description: Para `DESFAZER`, traz `desfazer=<idLote original>`.
+        dataHora: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/StatusExecucaoLote' }
+        resultado:
+          allOf:
+            - $ref: '#/components/schemas/ResultadoLote'
+          nullable: true
+          description: Nulo enquanto o lote não terminou.
+        qtdExpedientes: { type: integer, minimum: 0 }
+        qtdSucesso: { type: integer, minimum: 0 }
+        qtdFalhas: { type: integer, minimum: 0 }
+        gerenciadores:
+          type: array
+          items: { $ref: '#/components/schemas/Gerenciador' }
+        podeDesfazer:
+          type: boolean
+          description: |
+            True só para lote com estado anterior, concluído há menos de 24 h, para o autor ou um `CHEFE`.
+            Os 52 lotes do seed são sempre false.
+        desfazerAte:
+          type: string
+          format: date-time
+          nullable: true
+        itens:
+          type: array
+          items: { $ref: '#/components/schemas/ItemLote' }
+    PaginaLotes:
+      type: object
+      required: [itens]
+      properties:
+        itens:
+          type: array
+          items: { $ref: '#/components/schemas/Lote' }
+        proximoCursor:
+          type: string
+          nullable: true
