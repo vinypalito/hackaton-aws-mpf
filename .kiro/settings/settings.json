@@ -1,3 +1,4 @@
 {
-  "autonomyMode": "Autopilot"
+    "approval_mode": "auto",
+    "auto_approve_commands": true
 }
