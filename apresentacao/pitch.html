@@ -302,6 +302,83 @@ svg .seta.on{stroke:#c98a00;stroke-width:3}
  <p class="nota">Hooks do Kiro (ex.: rodar testes e gitleaks ao salvar) <span class="selo s-plan">Planejado</span></p>
 </section>
 
+<section class="slide" data-titulo="Custos (calculadora)" data-roteiro="1">
+ <h2>Estimativa de custos de infraestrutura · us-east-1 <span class="selo s-crit">Critério 6</span></h2>
+ <div class="calc-ctrl">
+  <label for="cen">Cenário<select id="cen"><option value="demo">Demo do hackathon</option><option value="piloto">Piloto (1 unidade)</option><option value="prod">Produção (MPF nacional)</option></select></label>
+  <label for="ft">Faixa gratuita<select id="ft"><option value="0">Sem faixa gratuita</option><option value="1">Só "sempre gratuito"</option><option value="2">+ 12 meses (contas antigas)</option></select></label>
+  <label for="plan"><span>Arquitetura</span><select id="plan"><option value="1">Completa (com planejados)</option><option value="0">Só o que está implantado</option></select></label>
+  <label for="cambio">Câmbio R$/US$<input id="cambio" type="number" step="0.01" min="1" value="5.50" style="width:90px"></label>
+ </div>
+ <div class="calc-ctrl" id="premissas">
+  <label for="pU">Usuários ativos<input id="pU" type="number" min="1" style="width:90px"></label>
+  <label for="pR">Req./usuário/dia<input id="pR" type="number" min="1" style="width:80px"></label>
+  <label for="pD">Dias úteis/mês<input id="pD" type="number" min="1" max="31" style="width:70px"></label>
+  <label for="pMs">Duração Lambda (ms)<input id="pMs" type="number" min="1" style="width:80px"></label>
+  <label for="pIA">Resumos IA/dia<input id="pIA" type="number" min="0" style="width:90px"></label>
+  <label for="pE">E-mails/dia<input id="pE" type="number" min="0" style="width:80px"></label>
+  <label for="pL">Logs GB/mês<input id="pL" type="number" min="0" style="width:70px"></label>
+  <label for="pG">DynamoDB GB<input id="pG" type="number" min="0" step="0.01" style="width:70px"></label>
+ </div>
+ <div class="grid g4" style="margin-bottom:10px" aria-live="polite">
+  <div class="card">Total mensal (USD)<span class="total" id="totUsd">—</span></div>
+  <div class="card">Total mensal (BRL)<span class="total" id="totBrl">—</span></div>
+  <div class="card">Total anual (USD)<span class="total" id="anoUsd">—</span></div>
+  <div class="card">Total anual (BRL)<span class="total" id="anoBrl">—</span></div>
+ </div>
+ <table><caption id="capCalc">Custo por serviço</caption><thead><tr><th scope="col">Serviço</th><th scope="col">Cálculo</th><th scope="col">Status</th><th scope="col" class="num">USD/mês</th><th scope="col">Participação</th></tr></thead><tbody id="tbCalc"></tbody></table>
+ <details style="margin-top:10px"><summary>Preços unitários usados (sob demanda, us-east-1, consultados em 07/10/2026)</summary>
+  <table><caption>Preços unitários e faixas gratuitas</caption><thead><tr><th scope="col">Serviço</th><th scope="col">Preço</th><th scope="col">Faixa gratuita</th><th scope="col">Fonte</th></tr></thead><tbody>
+  <tr><td>Lambda arm64</td><td>US$ 0,20/milhão req + US$ 0,0000133334/GB-s</td><td>1 M req + 400 mil GB-s/mês (sempre)</td><td><a href="https://aws.amazon.com/lambda/pricing/">aws.amazon.com/lambda/pricing</a></td></tr>
+  <tr><td>API Gateway REST</td><td>US$ 3,50/milhão (até 333 M)</td><td>1 M/mês por 12 meses</td><td><a href="https://aws.amazon.com/api-gateway/pricing/">aws.amazon.com/api-gateway/pricing</a></td></tr>
+  <tr><td>DynamoDB on-demand</td><td>US$ 0,125/milhão RRU · US$ 0,625/milhão WRU · US$ 0,25/GB-mês · PITR US$ 0,20/GB-mês</td><td>25 GB de armazenamento</td><td><a href="https://aws.amazon.com/dynamodb/pricing/on-demand/">aws.amazon.com/dynamodb/pricing/on-demand</a></td></tr>
+  <tr><td>S3 Standard</td><td>US$ 0,023/GB-mês · GET US$ 0,0004/1.000</td><td>5 GB por 12 meses</td><td><a href="https://aws.amazon.com/s3/pricing/">aws.amazon.com/s3/pricing</a></td></tr>
+  <tr><td>CloudFront</td><td>US$ 0,085/GB · US$ 0,01/10.000 req HTTPS</td><td>1 TB + 10 M req/mês (sempre)</td><td><a href="https://aws.amazon.com/cloudfront/pricing/">aws.amazon.com/cloudfront/pricing</a></td></tr>
+  <tr><td>Cognito Essentials</td><td>US$ 0,015/MAU</td><td>10.000 MAU</td><td><a href="https://aws.amazon.com/cognito/pricing/">aws.amazon.com/cognito/pricing</a></td></tr>
+  <tr><td>EventBridge Scheduler</td><td>US$ 1,00/milhão de invocações</td><td>14 M/mês</td><td><a href="https://aws.amazon.com/eventbridge/pricing/">aws.amazon.com/eventbridge/pricing</a></td></tr>
+  <tr><td>SES</td><td>US$ 0,10/1.000 e-mails</td><td>3.000/mês por 12 meses</td><td><a href="https://aws.amazon.com/ses/pricing/">aws.amazon.com/ses/pricing</a></td></tr>
+  <tr><td>Bedrock Nova Lite</td><td>US$ 0,00006/1K tokens entrada · US$ 0,00024/1K saída</td><td>—</td><td><a href="https://aws.amazon.com/bedrock/pricing/">aws.amazon.com/bedrock/pricing</a></td></tr>
+  <tr><td>Bedrock Guardrails</td><td>Conteúdo US$ 0,15 + PII US$ 0,10 por 1.000 unidades de texto</td><td>—</td><td><a href="https://aws.amazon.com/about-aws/whats-new/2024/12/amazon-bedrock-guardrails-reduces-pricing-85-percent/">anúncio AWS 12/2024</a></td></tr>
+  <tr><td>CloudWatch</td><td>Logs US$ 0,50/GB + US$ 0,03/GB-mês · métrica US$ 0,30 · dashboard US$ 3 · alarme US$ 0,10</td><td>5 GB, 10 métricas, 3 dashboards, 10 alarmes</td><td><a href="https://aws.amazon.com/cloudwatch/pricing/">aws.amazon.com/cloudwatch/pricing</a></td></tr>
+  <tr><td>Transferência de saída</td><td>US$ 0,09/GB</td><td>100 GB/mês</td><td><a href="https://aws.amazon.com/ec2/pricing/on-demand/">aws.amazon.com/ec2/pricing/on-demand</a></td></tr>
+  </tbody></table>
+  <p class="nota">Contas criadas desde 15/07/2025 recebem créditos em vez da faixa de 12 meses (<a href="https://aws.amazon.com/about-aws/whats-new/2025/07/aws-free-tier-credits-month-free-plan">anúncio AWS</a>). Valores são estimativas; confira no <a href="https://calculator.aws/">AWS Pricing Calculator</a>. Não inclui impostos.</p>
+ </details>
+</section>
+
+<section class="slide" data-titulo="Serverless × servidor ligado">
+ <h2>Serverless × servidor sempre ligado <span class="selo s-crit">Critério 6</span></h2>
+ <table><caption>Referência on-demand us-east-1 (USD/mês, 730 h)</caption><thead><tr><th scope="col">Opção</th><th scope="col">Composição</th><th scope="col" class="num">USD/mês</th></tr></thead><tbody>
+  <tr><td>Serverless (este projeto) · demo</td><td>Lambda + API GW + DynamoDB + Cognito + CloudFront/S3 + Bedrock</td><td class="num">≈ 2,48 a 9,10</td></tr>
+  <tr><td>Serverless · piloto</td><td>idem, 300 usuários</td><td class="num">≈ 20 a 30</td></tr>
+  <tr><td>Serverless · produção nacional</td><td>idem, 12.000 usuários</td><td class="num">≈ 643 a 828</td></tr>
+  <tr><td>Servidor mínimo (ocioso também paga)</td><td>EC2 t4g.small + EBS 20 GB gp3 + ALB + RDS PostgreSQL db.t4g.micro 20 GB</td><td class="num">≈ 50</td></tr>
+  <tr><td>Servidor com alta disponibilidade</td><td>2× t4g.medium + ALB + RDS db.t4g.medium Multi-AZ 100 GB + NAT Gateway</td><td class="num">≈ 250 (só computação/dados)</td></tr></tbody></table>
+ <p>Na demo e no piloto o serverless custa uma fração do servidor. Na escala nacional os valores se aproximam, mas sem servidor para corrigir, escalar ou pagar parado, e com escala automática nos picos.</p>
+</section>
+
+<section class="slide" data-titulo="Roadmap MVP → produção" data-roteiro="1">
+ <h2>Do MVP à produção <span class="selo s-crit">Critério 6</span></h2>
+ <div class="grid g3">
+  <div class="card"><h3>Feito (MVP)</h3><ul><li>Início, painel 3 visões, detalhe, resumo IA</li><li>4 stacks CDK, 77 recursos</li><li>192 testes</li></ul><span class="selo s-impl">Implementado</span></div>
+  <div class="card"><h3>Próximo</h3><ul><li>AgendamentosStack: alertas 07:00 + e-mail SES</li><li>ObservabilidadeStack: dashboard, alarmes, auditoria</li><li>Ações em lote (≤ 50 síncrono, 51–200 assíncrono)</li><li>Guardrails, JSON Schema, usage plan</li></ul><span class="selo s-plan">Planejado</span></div>
+  <div class="card"><h3>Produção</h3><ul><li>Domínio próprio com TLS 1.2 e CSP</li><li>Integração com a base real do Único</li><li>fast-check, axe-core, k6, gitleaks no CI</li><li>WAF e KMS dedicada, se a equipe decidir</li></ul><span class="selo s-plan">Futuro</span></div>
+ </div>
+</section>
+
+<section class="slide" data-titulo="Encerramento e perguntas" data-roteiro="1">
+ <h2>Obrigado</h2>
+ <p style="font-size:22px">Uma fila priorizada, segura e barata, pronta para crescer com o Único.</p>
+ <div class="grid g2">
+  <div class="card"><h3>Perguntas frequentes</h3><dl>
+   <dt><b>E se a IA errar?</b></dt><dd>O resumo é apoio, com selo "Gerado por IA". Nunca vê dado sigiloso e a tela funciona sem ele.</dd>
+   <dt><b>Quanto custa?</b></dt><dd>Cerca de US$ 2,48/mês na demo; US$ 643 a 828/mês na escala nacional (slide 16).</dd>
+   <dt><b>Como garantem o sigilo?</b></dt><dd>Autorização no backend, por setor e nível, com negação por padrão e testes.</dd>
+   <dt><b>Por que serverless?</b></dt><dd>Sem servidor para manter, escala automática e custo proporcional ao uso.</dd></dl></div>
+  <div class="card"><h3>Acesse</h3><p class="mono">https://d1rlsn9g5sqwu6.cloudfront.net/</p><p>Usuários de demo: GABSUB3-DVT-U02 (CHEFE) e GABSUB3-DVT-U03 (SERVIDOR).</p></div>
+ </div>
+</section>
+
 <!--MAIS-SLIDES-->
 
 </main>
@@ -457,6 +534,52 @@ var ROT={impl:['s-impl','Implementado'],parc:['s-parc','Parcial'],plan:['s-plan'
    document.getElementById('passo').textContent='Passo '+(i+1)+' de '+f.length+': '+p[0];},reduz?i*10:i*1600));});};});
 })();
 document.getElementById('filtroInv').addEventListener('change',function(){var v=this.value;[].forEach.call(document.querySelectorAll('#tabInv tbody tr'),function(r){r.hidden=v&&r.dataset.st!==v;});});
+(function(){
+ var CEN={demo:{n:'Demo do hackathon',U:14,R:350,D:30,ms:200,IA:17,E:3,L:1,G:0.05},
+  piloto:{n:'Piloto (1 unidade)',U:300,R:150,D:22,ms:200,IA:300,E:300,L:5,G:0.5},
+  prod:{n:'Produção (MPF nacional)',U:12000,R:150,D:22,ms:150,IA:12000,E:12000,L:60,G:60}};
+ var NOMES={cloudfront:'CloudFront',s3:'S3',cognito:'Cognito',apigw:'API Gateway REST',lambda:'Lambda (arm64)',dynamodb:'DynamoDB',bedrock:'Bedrock Nova Lite',cloudwatch:'CloudWatch Logs',saida:'Transferência de saída (API)',guardrails:'Bedrock Guardrails',scheduler:'EventBridge Scheduler',ses:'SES',obs:'CloudWatch dashboard/alarmes/métricas'};
+ var ultimo={};
+ function $(i){return document.getElementById(i)}
+ function fmt(v,d){return v.toLocaleString('pt-BR',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})}
+ function preencher(){var c=CEN[$('cen').value];$('pU').value=c.U;$('pR').value=c.R;$('pD').value=c.D;$('pMs').value=c.ms;$('pIA').value=c.IA;$('pE').value=c.E;$('pL').value=c.L;$('pG').value=c.G;calc();}
+ function num(i){var v=parseFloat($(i).value);return isFinite(v)&&v>=0?v:0}
+ function calc(){
+  var ft=+$('ft').value,pl=$('plan').value==='1',cx=num('cambio')||5.5;
+  var U=num('pU'),R=num('pR'),D=num('pD'),ms=num('pMs'),IA=num('pIA')*D,E=num('pE')*D,L=num('pL'),G=num('pG');
+  var req=U*R*D,s1=ft>=1,s12=ft>=2,linhas=[];
+  function add(k,v,txt,plan){linhas.push({k:k,v:Math.max(0,v),txt:txt,plan:plan});}
+  // CloudFront: 20 req e 1 MB por sessão/dia
+  var cfReq=U*D*20,cfGB=U*D*1/1024;
+  add('cloudfront',(s1?Math.max(0,cfGB-1024):cfGB)*0.085+(s1?Math.max(0,cfReq-1e7):cfReq)/1e4*0.01,fmt(cfReq,0)+' req · '+fmt(cfGB)+' GB');
+  add('s3',(s12?0:0.01*0.023)+U*D*2*0.0004/1000,'0,01 GB + GETs de origem');
+  add('cognito',(s1?Math.max(0,U-10000):U)*0.015,fmt(U,0)+' MAU × US$ 0,015');
+  add('apigw',(s12?Math.max(0,req-1e6):req)*3.5/1e6,fmt(req,0)+' req × US$ 3,50/M');
+  var ag=pl?2910:0,gbs=req*(1024/1024)*ms/1000+ag*5,inv=req+ag;
+  add('lambda',(s1?Math.max(0,inv-1e6):inv)*0.2/1e6+(s1?Math.max(0,gbs-4e5):gbs)*0.0000133334,fmt(inv,0)+' invoc. · '+fmt(gbs,0)+' GB-s'+(pl?' (inclui agendadas)':''));
+  var wr=pl?req*0.1*12:0,gArm=s1?Math.max(0,G-25):G;
+  add('dynamodb',req*20*0.125/1e6+wr*0.625/1e6+gArm*0.25+G*0.2,fmt(req*20,0)+' RRU'+(pl?' + '+fmt(wr,0)+' WRU':'')+' · '+fmt(G)+' GB + PITR');
+  add('bedrock',IA*(1500*0.00006+300*0.00024)/1000,fmt(IA,0)+' resumos × (1.500 in + 300 out tokens)');
+  add('cloudwatch',(s1?Math.max(0,L-5):L)*0.5+L*0.03,fmt(L)+' GB ingeridos');
+  var egGB=req*8/1024/1024;add('saida',(s1?Math.max(0,egGB-100):egGB)*0.09,fmt(egGB)+' GB (8 KB/resposta)');
+  if(pl){
+   add('guardrails',IA*2*0.25/1000,fmt(IA,0)+' chamadas × 2 unidades',1);
+   add('scheduler',s1?0:ag/1e6,fmt(ag,0)+' invocações/mês',1);
+   add('ses',(s12?Math.max(0,E-3000):E)*0.1/1000,fmt(E,0)+' e-mails',1);
+   add('obs',s1?0:(3+10*0.1+10*0.3),'1 dashboard + 10 alarmes + 10 métricas EMF',1);}
+  var tot=linhas.reduce(function(a,l){return a+l.v},0),max=Math.max.apply(null,linhas.map(function(l){return l.v}))||1;
+  ultimo={};var cen=CEN[$('cen').value].n;
+  $('tbCalc').innerHTML=linhas.map(function(l){ultimo[l.k]={cen:cen,txt:'US$ '+fmt(l.v)+'/mês · '+l.txt};
+   return '<tr><td>'+NOMES[l.k]+'</td><td>'+esc(l.txt)+'</td><td><span class="selo '+(l.plan?'s-plan">Planejado':'s-impl">Implementado')+'</span></td><td class="num">'+fmt(l.v)+'</td><td><span class="barra'+(l.plan?' plan':'')+'" style="width:'+Math.max(1,l.v/max*160)+'px"></span> '+fmt(tot?l.v/tot*100:0,1)+' %</td></tr>';}).join('')
+   +'<tr><th scope="row">Total</th><td colspan="2"></td><td class="num"><b>'+fmt(tot)+'</b></td><td></td></tr>';
+  $('capCalc').textContent='Custo por serviço · '+cen+' · '+$('ft').selectedOptions[0].text+' · '+$('plan').selectedOptions[0].text;
+  $('totUsd').textContent='US$ '+fmt(tot);$('totBrl').textContent='R$ '+fmt(tot*cx);$('anoUsd').textContent='US$ '+fmt(tot*12);$('anoBrl').textContent='R$ '+fmt(tot*12*cx);
+  window.totalCalc=tot;}
+ window.custoServico=function(k){return ultimo[k]||null};
+ $('cen').addEventListener('change',preencher);
+ ['ft','plan','cambio','pU','pR','pD','pMs','pIA','pE','pL','pG'].forEach(function(i){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc);});
+ preencher();
+})();
 /*JS-MAIS*/
 </script>
 </body>
