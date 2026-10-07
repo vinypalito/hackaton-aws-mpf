@@ -1,0 +1,16 @@
+{
+  "approved": false,
+  "findings": [
+    "Domínio de prazo dos baixados — confirmado: RN1 e o teste de paridade abrangem todos os 4.109 expedientes, mas os 1.066 baixados usam status de cumprimento. Separar regras e testes de ativos e históricos.",
+    "Cardinalidade de favoritos — confirmado: a chave omite idUsuario e não permite que dois usuários favoritem o mesmo expediente. Definir chave por usuário e semântica do booleano denormalizado.",
+    "Consulta de filtros compartilhados — confirmado: filtros só têm partição por usuário, embora devam ser listados por setor sem Scan. Acrescentar access pattern por setor e critério de teste.",
+    "Eventos fora do catálogo — confirmado: ciência, favorito e reversão exigem histórico, mas não existem em TIPO_MOVIMENTACAO. Declarar novos códigos ou um mapeamento válido e carregável.",
+    "Política de autorização incompleta — confirmado: não há matriz por ação/perfil e a negação de recursos de outro usuário contradiz leituras compartilhadas do setor. Definir permissões e exceções testáveis no PDP.",
+    "Lotes sem estado anterior e atomicidade — confirmado: a trilha não permite desfazer com segurança nem detectar mudanças posteriores. Persistir before-images/versões e definir a unidade atômica e a retomada por item.",
+    "Eventos sem entrega e deduplicação garantidas — confirmado: escrita, publicação, contadores, alertas e auditoria não estão ligados atomicamente. Exigir outbox, eventId, idempotência, reconciliação e medição do SLA eventual.",
+    "Busca incompatível com a meta de latência — provável: filtros não indexados e busca sem acento tendem a percorrer a partição no volume de 10×. Definir access pattern de busca, paginação, contagem, custo e teste p95.",
+    "Massa de carga 10× indisponível — confirmado: o gerador citado não possui fator de escala e a base oficial não pode ser alterada. Especificar gerador temporário separado ou novo modo que preserve saida/.",
+    "Auditoria imutável não verificável — confirmado: não há destino, esquema, retenção ou mecanismo antialteração. Definir armazenamento, proteção, campos e teste de imutabilidade."
+  ],
+  "reviewDoc": "c:\\Users\\pedrohenriques\\ProjetosGit\\hackaton-aws-mpf\\.agents\\reviews\\requisitos-tecnico.md"
+}

@@ -1,0 +1,175 @@
+# Plano de Implementação — Painel Unificado de Expedientes e Nova Tela Inicial
+
+> Spec Kiro · Fase 3 (Tarefas) · Base: `requirements.md` e `design.md`
+> Ordem pensada para ter um **MVP demonstrável cedo** (blocos 1–6) e depois somar diferenciais que pontuam.
+> Todo comando AWS usa `--profile hackatongabinete` e região `us-east-1`. Nada em `resources/` é editado.
+
+- [ ] 1. Fundação do repositório e infraestrutura de dados
+  - [ ] 1.1 Criar monorepo npm workspaces (`packages/dominio`, `packages/contratos`, `services/api`, `services/eventos`, `web`, `infra`, `scripts`, `tests`) com TypeScript, ESLint, Prettier, Vitest e comando único `npm test`
+    - _Requisitos: 29.12, 33.6, 36.3_
+  - [ ] 1.2 Criar app CDK com tags `projeto`/`ambiente`, parâmetros por ambiente/órgão e `cdk-nag`
+    - _Requisitos: 29.11, 32.3, 36.4, 24.9_
+  - [ ] 1.3 Implementar `DadosStack`: tabela `Expedientes` (PK/SK, GSI1, GSI2 String, projeção ALL, on-demand, PITR, Streams, TTL `expiraEm`, KMS) e buckets de índice e auditoria (KMS, Block Public Access, Object Lock *Governance* 30 dias)
+    - _Requisitos: 2.2, 25.5, 25.9, 29.2_
+  - [ ] 1.4 Implantar `DadosStack` (`npx cdk deploy DadosStack --profile hackatongabinete`) e conferir com `aws dynamodb describe-table --profile hackatongabinete`
+    - _Requisitos: 29.11_
+
+- [ ] 2. Carga do seed existente e migração da aplicação
+  - [ ] 2.1 Criar `scripts/carregar-seed.ps1`/`.sh` que define `AWS_PROFILE=hackatongabinete` e executa `gerar_seed.py --carregar --tabela Expedientes --regiao us-east-1` sobre `seed/saida/dynamodb/itens.json`, sem regenerar nem editar arquivos
+    - _Requisitos: 2.1, 2.2, 26.1_
+  - [ ] 2.2 Criar `scripts/verificar-carga` que conta 49.108 itens e compara a contagem por `entidade` com as linhas de cada CSV (via `Query` por partição conhecida/contagem exportada, sem `Scan` em rota)
+    - _Requisitos: 2.3_
+  - [ ] 2.3 Criar `scripts/migrar` idempotente: 30 favoritos `USR#…/FAV#…`, 9 espelhos `SETOR#…/FILTRO#…`, códigos `CIENCIA`, `REVERSAO_LOTE`, `DESFAZER`, domínio `STATUS_EXECUCAO_LOTE` e `versao = 1` em todo `META`; verificar 49.153 itens e reexecução sem duplicatas
+    - _Requisitos: 2.4, 2.5_
+  - [ ] 2.4 Criar `scripts/restaurar-demo` (limpa itens criados pela aplicação, recarrega o seed, reaplica migração e confirma contagens)
+    - _Requisitos: 2.8, 35.4_
+  - [ ] 2.5 Criar parâmetro de configuração `DATA_REFERENCIA` (padrão `2026-10-07T17:00:00-03:00`) no SSM e lido pelas Lambdas
+    - _Requisitos: 2.6_
+
+- [ ] 3. Módulo de domínio puro (`packages/dominio`)
+  - [ ] 3.1 Implementar `calcularStatusPrazo` (RN1 nos ativos; `CUMPRIDO`/`CUMPRIDO_COM_ATRASO` nos baixados) com testes unitários
+    - _Requisitos: 9.1, 9.2, 9.3, 33.1_
+  - [ ] 3.2 Implementar `calcularPontuacao` com composição (RN2, metade em `ENVIADO_NAO_RECEBIDO`, 0 nos baixados) e faixas, com testes unitários e de propriedade (0–100)
+    - _Requisitos: 8.1, 8.2, 33.1, 33.3_
+  - [ ] 3.3 Implementar `chaveGsi1`/`chaveGsi2` e ordenação da fila (RN3) idênticas ao gerador
+    - _Requisitos: 2.7, 8, 11, 33.1_
+  - [ ] 3.4 Escrever testes de paridade lendo os CSVs: RN1 nos 3.043 ativos, 540/526 nos baixados, RN2 nos 4.109
+    - _Requisitos: 33.2_
+  - [ ] 3.5 Implementar `mascararSigilo` (campos D1, texto "Conteúdo sigiloso") e `validarCriterios` (lista branca do Req. 5) com testes
+    - _Requisitos: 5.5, 5.8, 24.6, 24.7, 33.1_
+  - [ ] 3.6 Implementar `calcularRisco` com faixas Alto/Médio/Baixo e testes
+    - _Requisitos: 10, 33.1_
+
+- [ ] 4. Autenticação, autorização e API de leitura (MVP)
+  - [ ] 4.1 Implementar `AuthStack`: Cognito User Pool com atributos `custom:idUsuario`, `custom:siglaSetor`, `custom:perfil` (somente leitura), App Client PKCE; script que provisiona os 14 usuários de `usuarios.csv` (senha temporária em SSM SecureString; `ativo=false` desabilitado)
+    - _Requisitos: 1.1, 1.2, 1.6_
+  - [ ] 4.2 Criar policy store do Verified Permissions e políticas Cedar em `infra/politicas/` cobrindo a matriz do Req. 24.3, com testes permitido/negado por linha
+    - _Requisitos: 24.2, 24.3, 24.5, 24.8_
+  - [ ] 4.3 Implementar `ApiStack`: API Gateway REST com Cognito Authorizer, validação por JSON Schema, throttling, CORS restrito; uma role IAM por Lambda; middleware (claims → contexto, PDP, `correlationId`, erros padronizados, logger com lista branca)
+    - _Requisitos: 1.4, 1.5, 24.1, 24.4, 24.9, 24.10, 25.1, 25.2, 25.6, 26.2, 30.1_
+  - [ ] 4.4 Implementar `GET /me`, `GET /contadores` e `GET /home` (contadores, 10 prazos do GSI2 com `requerAcao`, 5 alertas não lidos, próximo expediente, informes vigentes)
+    - _Requisitos: 1.3, 4.2, 4.5, 20.1–20.6_
+  - [ ] 4.5 Implementar `GET /expedientes` lendo o GSI1 (versão inicial sem índice S3), com visão unificada/separada, caixas, filtros principais (prazo, prioridade, responsável, assunto), ordenação e cursor
+    - _Requisitos: 3.1–3.3, 3.6, 4.4, 5.1–5.3, 5.11_
+  - [ ] 4.6 Implementar `GET /expedientes/{id}` (uma `Query` em `EXP#<id>`, máscara de sigilo, 404 para outro setor)
+    - _Requisitos: 13.1–13.4, 13.9, 13.10, 24.6_
+  - [ ] 4.7 Escrever testes de API para home, painel e detalhe: 401, 404 entre setores, sigiloso para servidor não responsável
+    - _Requisitos: 33.4_
+
+- [ ] 5. Frontend MVP (Angular)
+  - [ ] 5.1 Implementar `WebStack` (S3 privado + CloudFront com OAC, TLS 1.2, *response headers policy* com CSP/HSTS/`frame-ancestors 'none'`) e pipeline de build/deploy da SPA
+    - _Requisitos: 25.3, 25.4, 29.1_
+  - [ ] 5.2 Criar shell acessível: login Cognito, cabeçalho com usuário/setor/perfil, "Dados de 07/10/2026, 17:00", "Base 100% sintética", skip link, `lang="pt-BR"`, `title` por rota, região `aria-live` global, logout
+    - _Requisitos: 1.3, 1.7, 1.8, 27.1, 27.4, 27.9_
+  - [ ] 5.3 Criar componentes base acessíveis: tabela de dados (`caption`, `th id`, `td headers`), campo com `label`/erro, selo de prazo e de prioridade (cor + ícone + texto, cores do catálogo)
+    - _Requisitos: 9.4–9.6, 27.2, 27.3, 27.5, 27.6, 36.2_
+  - [ ] 5.4 Implementar tela inicial com widgets obrigatórios, erro isolado por widget e títulos navegáveis
+    - _Requisitos: 20.1–20.6, 20.8, 20.10_
+  - [ ] 5.5 Implementar painel: seletor de visão (com atalho "Processos judiciais"), abas de caixa com contador, filtros principais, chips removíveis, filtros na URL, estado vazio, paginação
+    - _Requisitos: 3.2–3.8, 4.1–4.3, 5.6, 5.7_
+  - [ ] 5.6 Implementar detalhe do expediente com histórico em tabela acessível (quem, quando, de onde, para onde), prazos e designações
+    - _Requisitos: 13.2–13.4, 13.11_
+  - [ ] 5.7 Implementar layout responsivo (cartões < 768 px, alvos ≥ 24 px, reflow 320 px, zoom 200 %, `prefers-reduced-motion`)
+    - _Requisitos: 27.8, 28.1–28.4_
+  - [ ] 5.8 Checkpoint MVP: implantar tudo e percorrer login → home → painel filtrado → detalhe com `GABSUB3-DVT-U02` e `GABSUB3-DVT-U03`
+    - _Requisitos: 35.2, 35.3_
+
+- [ ] 6. Ações em lote com pré-visualização e desfazer
+  - [ ] 6.1 Implementar `avaliarElegibilidade` e `aplicarEfeito` (7 ações, RN4, RN5, efeitos D4, before-image) com testes unitários e de propriedade (preview ≡ execução; executar + desfazer = estado anterior)
+    - _Requisitos: 14.2, 15.2, 33.1, 33.3_
+  - [ ] 6.2 Implementar `POST /lotes/preview` (relê `META`, autorização item a item, listas "Serão alterados"/"Serão ignorados" com motivo, limite 200)
+    - _Requisitos: 14.8, 14.10, 15.1, 15.2, 24.4_
+  - [ ] 6.3 Implementar `POST /lotes` síncrono (≤ 50): `Idempotency-Key`, `TransactWriteItems` por item com `versao`, `MOV#`, `DES#`/`ROT#`, `ANTES#`, `ITEM#`, `OUTBOX#`; trilha em `USR#<id>/LOTE#<dataHora>#<idLote>`; recálculo de prioridade e GSIs; resultado `PARCIAL`
+    - _Requisitos: 2.7, 14.3–14.7, 14.9, 15.3, 15.4, 15.6, 29.3_
+  - [ ] 6.4 Implementar `POST /lotes/{id}/desfazer` (≤ 24 h, autor ou `CHEFE`, condicional a `versaoDepois`, `REVERSAO_LOTE`, lote `DESFAZER`, 409 fora da janela)
+    - _Requisitos: 15.5, 15.7–15.9_
+  - [ ] 6.5 Implementar `GET /lotes` (meus e do setor, 52 do seed sem "Desfazer") e filtros por `tipoAcao`/`resultado`
+    - _Requisitos: 15.11_
+  - [ ] 6.6 Implementar na SPA seleção múltipla, barra de lote e `<dialog>` modal acessível com pré-visualização, resultado por `aria-live` e "Desfazer"
+    - _Requisitos: 14.1, 14.7, 15.1, 15.5, 15.12, 27.7_
+  - [ ] 6.7 Escrever testes de API do lote: retomada após falha simulada sem duplicar, desfazer duas vezes, item alterado entre execução e desfazer, 403 por perfil
+    - _Requisitos: 15.10, 33.4_
+
+- [ ] 7. Arquitetura orientada a eventos
+  - [ ] 7.1 Implementar `EventosStack`: bus EventBridge, Pipe Streams→bus filtrando `OUTBOX#`, regras, filas SQS por consumidor com DLQ e alarme, SNS da equipe
+    - _Requisitos: 29.4, 29.5, 29.8, 29.9_
+  - [ ] 7.2 Implementar consumidor de contadores idempotente (`PROC#`, versão) e medição `LatenciaConvergenciaContador`; SPA com valor otimista "atualizando…"
+    - _Requisitos: 4.6, 4.7, 29.6_
+  - [ ] 7.3 Implementar índice de busca do setor (snapshot gzip em S3 + ponteiro `INDICE#BUSCA`), consumidor que aplica deltas e migrar `GET /expedientes` para pesquisa livre normalizada, todos os filtros do RF03, total exato e cursor por versão
+    - _Requisitos: 5.1, 5.2, 5.9, 5.10, 5.11, 31.3_
+  - [ ] 7.4 Implementar reconciliação agendada (15 min e sob comando) e teste que compara contadores com contagem direta após carga, lotes e reconciliação
+    - _Requisitos: 4.8, 29.10_
+  - [ ] 7.5 Implementar consumidor de auditoria (S3 Object Lock, campos mínimos, role só `s3:PutObject`) e teste de imutabilidade (`AccessDenied`) e de não duplicação
+    - _Requisitos: 25.9_
+  - [ ] 7.6 Implementar Step Functions (Map + SQS) para lotes de 51–200 itens com status `PENDENTE`/`EM_PROCESSAMENTO`/`CONCLUIDO`
+    - _Requisitos: 29.7_
+  - [ ] 7.7 Escrever teste de propriedade: evento duplicado ou fora de ordem não altera contadores nem índice
+    - _Requisitos: 29.6, 33.3_
+
+- [ ] 8. Assistente com IA generativa (Amazon Bedrock)
+  - [ ] 8.1 Implementar `IaStack`: Guardrail (conteúdo, *prompt attack*, PII) e permissão `bedrock:InvokeModel` só para `us.amazon.nova-lite-v1:0`
+    - _Requisitos: 22.5, 24.9_
+  - [ ] 8.2 Implementar `POST /ia/resumo-dia` com dados mascarados (sem nomes, e-mails, anotações nem conteúdo sigiloso), timeout 5 s e cache por setor
+    - _Requisitos: 22.1, 22.4, 22.7, 26.3_
+  - [ ] 8.3 Implementar `POST /ia/interpretar-pesquisa` com saída JSON validada por `validarCriterios`, limite 30/h por usuário e métrica de custo
+    - _Requisitos: 22.2, 22.3, 22.8, 30.3_
+  - [ ] 8.4 Implementar na SPA o widget "Resumo do dia" e "Pesquisar com IA" (filtros interpretados exibidos e aplicados só após confirmação, selo "Gerado por IA — confira antes de agir", fallback manual)
+    - _Requisitos: 22.1–22.3, 22.6, 22.7_
+
+- [ ] 9. Funcionalidades desejáveis do painel
+  - [ ] 9.1 Implementar filtros salvos (CRUD, padrão, compartilhar com espelho na mesma transação, listar próprios + compartilhados) com testes de API usando `FIL000001`
+    - _Requisitos: 6, 33.4_
+  - [ ] 9.2 Implementar personalização (colunas, reordenação, ordenação, agrupamento, densidade, itens por página, tema) em `PREF#<contexto>`
+    - _Requisitos: 7_
+  - [ ] 9.3 Implementar composição da prioridade visível e destaques de urgentes/próximos do vencimento/requer ação
+    - _Requisitos: 8_
+  - [ ] 9.4 Implementar modo foco (fila GSI2, ação pendente e atalho)
+    - _Requisitos: 11_
+  - [ ] 9.5 Implementar anotação, favorito pessoal (dois usuários no mesmo expediente, teste de API) e filtro/exportação do histórico
+    - _Requisitos: 13.5–13.8, 33.4_
+  - [ ] 9.6 Implementar central de alertas (filtros, lida/não lida, contador no cabeçalho, máscara, *polling* ≤ 30 s, consumidor de notificações)
+    - _Requisitos: 17_
+  - [ ] 9.7 Implementar exportação CSV segura (BOM, neutralização de fórmulas, máscara, 5.000 linhas, auditoria) e publicar OpenAPI
+    - _Requisitos: 23, 33.1_
+
+- [ ] 10. Funcionalidades "se sobrar tempo"
+  - [ ] 10.1 Implementar filtro e ordenação por índice de risco e widget "Maior risco"
+    - _Requisitos: 10, 20.7_
+  - [ ] 10.2 Implementar calendário mensal e exportação `.ics` sem conteúdo sigiloso, com lembrete configurável
+    - _Requisitos: 12, 26.3_
+  - [ ] 10.3 Implementar designação balanceada (sugestões, distribuição na pré-visualização, só `CHEFE`/`MEMBRO`) e widget "Carga da equipe"
+    - _Requisitos: 16, 20.7_
+  - [ ] 10.4 Implementar rotina diária (Scheduler 07:00): alertas de prazo sem duplicar e resumo SES (HTML acessível + texto, sandbox, retentativa e DLQ) com pré-visualização
+    - _Requisitos: 17.6, 18, 26.4, 29.8_
+  - [ ] 10.5 Implementar dashboards com tabela alternativa, filtros por período/gerenciador, restrição de produtividade individual, CSV e impressão
+    - _Requisitos: 19, 26.5, 27.7_
+  - [ ] 10.6 Implementar configuração da tela inicial (mostrar/ocultar, reordenar por teclado e arrastar, padrão por perfil, `PREF#TELA_INICIAL`) e widgets opcionais
+    - _Requisitos: 20.7, 21_
+
+- [ ] 11. Qualidade, segurança, observabilidade e custo
+  - [ ] 11.1 Implementar `ObservabilidadeStack`: Powertools (logs, tracer, métricas), X-Ray, dashboard, alarmes (5xx, p95, DLQ, throttling) e AWS Budgets US$ 25 → SNS
+    - _Requisitos: 30, 32.3_
+  - [ ] 11.2 Habilitar WAF opcional (regras gerenciadas + *rate limit*) por parâmetro
+    - _Requisitos: 25.7_
+  - [ ] 11.3 Escrever teste E2E do roteiro da demo (Playwright) com axe-core nas telas principais
+    - _Requisitos: 27.10, 33.5_
+  - [ ] 11.4 Criar gerador 10× (`scripts/gerar-carga-10x.py`, importa `gerar_seed.py`, grava em `build/` e tabela `Expedientes-carga`, recusa destino do seed) e teste de carga k6 com p50/p95/p99
+    - _Requisitos: 31.1, 31.2, 31.5, 31.6_
+  - [ ] 11.5 Garantir cobertura ≥ 80 % no domínio e configurar `gitleaks` antes do commit
+    - _Requisitos: 25.8, 33.6_
+
+- [ ] 12. Documentação, Kiro e pitch
+  - [ ] 12.1 Preencher steering `product.md`, `tech.md` e `structure.md` com produto, stack, comandos e convenções reais
+    - _Requisitos: 34.2_
+  - [ ] 12.2 Criar hooks Kiro: testes de domínio ao salvar regras, verificação de acessibilidade ao salvar componentes, testes de política ao salvar Cedar, bloqueio de segredos antes do commit
+    - _Requisitos: 34.3_
+  - [ ] 12.3 Escrever README (propósito, diagrama, implantar, carregar, executar, testar, destruir), ADRs, `docs/lgpd.md` (registro de tratamento, retenção 30 dias), `docs/custos.md` (evento e produção) e caminho para produção
+    - _Requisitos: 26.6, 32.2, 34.1, 34.4, 36.1_
+  - [ ] 12.4 Criar `scripts/destruir` (`cdk destroy --all --profile hackatongabinete` + limpeza de buckets)
+    - _Requisitos: 26.7_
+  - [ ] 12.5 Escrever roteiro de 5 minutos (problema → solução → demo → resultados → próximos passos) com dois perfis do `GABSUB3-DVT` e negação de acesso, cronometrar dois ensaios
+    - _Requisitos: 35.1, 35.2, 35.3_
+  - [ ] 12.6 Preparar contingência (gravação e capturas) e FAQ curto (arquitetura, segurança, custo, produção)
+    - _Requisitos: 35.5, 35.6_
+  - [ ] 12.7 Revisão final: rodar `restaurar-demo`, `npm test`, E2E e conferir que nenhum dado real ou credencial entrou no repositório
+    - _Requisitos: 2.9, 26.1, 35.4_

@@ -1,0 +1,10 @@
+{
+  "approved": true,
+  "findings": [
+    "Equivalência do PDF não confirmada: caso-de-uso-hackathon.pdf não foi lido; a spec usou o markdown equivalente e documentou a ressalva. Confirmar a equivalência antes da banca. Não bloqueante.",
+    "Uso de 'A equipe DEVE' em critérios de aceitação de requisitos de processo (Req 2.7, 32.2, 34, 35, 36) em vez de 'O sistema DEVE'; desvio leve do EARS de sistema. Considerar rotular como requisitos de processo. Não bloqueante.",
+    "Critério 2 do HTML cita Step Functions e SNS/SQS; a spec cobre Step Functions e SQS/DLQ (Req 29), mas não cita SNS. Opcionalmente mencionar SNS. Não bloqueante.",
+    "Critério 4 do HTML cita Verified Permissions; a spec descreve um PDP único com políticas declarativas (Req 24.2), conceitualmente equivalente. Nomear Cedar/Verified Permissions reforçaria a aderência ao item. Não bloqueante."
+  ],
+  "reviewDoc": "c:\\Users\\pedrohenriques\\ProjetosGit\\hackaton-aws-mpf\\.agents\\reviews\\requisitos-cobertura.md"
+}
