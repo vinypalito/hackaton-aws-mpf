@@ -516,8 +516,13 @@ Atende: Req. 34, 35.
 Atende: Req. 36.
 
 Integração com o Único por eventos (EventBridge/API), federação Cognito com o IdP institucional (SAML/OIDC),
-assinatura digital real (ICP-Brasil), RIPD/LGPD e pentest, Object Lock *Compliance* com retenção legal, contas
-separadas (dev/hml/prd) com pipeline CI/CD, testes com usuários. Reuso: catálogos e `setores.gerenciadores` dirigem a
+assinatura digital real (ICP-Brasil), RIPD/LGPD e pentest, contas separadas (dev/hml/prd) com pipeline CI/CD, testes
+com usuários.
+
+Opcional/futuro (fora da stack do MVP, Req. 36.1): AWS WAF com regras gerenciadas e *rate limit*; chave KMS dedicada;
+AWS X-Ray; AWS Budgets e alarmes por SNS; trilha em S3 Object Lock *Compliance* com retenção legal; Amazon Verified
+Permissions (Cedar) se a matriz crescer; EventBridge bus/SQS para integração por eventos com o Único; orquestração de
+lotes acima de 200 itens com Step Functions. Reuso: catálogos e `setores.gerenciadores` dirigem a
 UI; `packages/dominio` publicado como pacote; CDK parametrizado por `orgao` e `ambiente`.
 
 ## 16. Matriz de rastreabilidade: critério de avaliação → requisito → componente
@@ -531,22 +536,22 @@ Cobre os 32 itens dos 6 critérios de `criterios-avaliacao-hackathon.html`.
 | 1. Atendimento | Entradas e saídas (CSV, JSON, etc.) | 2, 12, 23 | Carga/migração (3), `.ics`, CSV seguro, OpenAPI (4.3) |
 | 1. Atendimento | Qualidade e utilidade do output | 19, 20, 22, 23 | Tela inicial, indicadores, resumo IA (5), exportações |
 | 1. Atendimento | Uso dos dados sintéticos do kit | 2, 9, 31, 33 | Tabela do seed (3.1), migração (3.2), testes de paridade (12) |
-| 2. Arquitetura | Serverless (Lambda, API GW, S3, DynamoDB, Step Functions) | 29 | Arquitetura (2), `ApiStack`, `DadosStack`, `EventosStack` |
-| 2. Arquitetura | Orientada a eventos (EventBridge, SNS/SQS, triggers) | 4, 17, 18, 29 | Outbox, Streams, Pipes, SQS+DLQ, Scheduler, SNS (4.5) |
-| 2. Arquitetura | Serviços gerenciados | 1, 18, 22, 24, 25, 29, 30 | Cognito, AVP, SES, Bedrock, Object Lock, CloudWatch |
+| 2. Arquitetura | Serverless (Lambda, API GW, S3, DynamoDB) | 29 | Arquitetura (2), `ApiStack`, `DadosStack`, `WebStack` |
+| 2. Arquitetura | Orientada a eventos (EventBridge, triggers) | 4, 17, 18, 29 | EventBridge Scheduler, invocação assíncrona do lote, efeitos transacionais (4.4, 4.5), `AgendamentosStack` |
+| 2. Arquitetura | Serviços gerenciados | 1, 18, 22, 24, 25, 29, 30 | Cognito, SES, Bedrock, CloudWatch Logs |
 | 2. Arquitetura | Infraestrutura como código | 29, 36 | CDK (2.1) |
-| 2. Arquitetura | Desacoplamento | 29, 36 | Pacotes (4.1), consumidores independentes (4.5) |
-| 2. Arquitetura | Uso apropriado do Bedrock | 22 | Assistente IA (5), `IaStack` |
+| 2. Arquitetura | Desacoplamento | 29, 36 | Pacotes (4.1), domínio puro × repositório × handlers, Lambdas por responsabilidade |
+| 2. Arquitetura | Uso apropriado do Bedrock | 22 | Assistente IA (5), `ApiStack` (parâmetro opcional) |
 | 3. Inovação | Abordagem diferenciada | 8, 10, 11, 16, 22 | Prioridade explicável, risco, modo foco, designação balanceada, IA |
-| 3. Inovação | Combinação de serviços AWS e Kiro | 22, 29, 34 | Bedrock + AVP + EventBridge; hooks (13) |
+| 3. Inovação | Combinação de serviços AWS e Kiro | 22, 29, 34 | Bedrock + EventBridge Scheduler + SES; hooks (13) |
 | 3. Inovação | Specs, hooks e steering do Kiro | 34 | Engenharia com Kiro (13) |
 | 3. Inovação | UX/UI bem pensada | 7, 9, 11, 20, 21, 27, 28 | SPA (4.6), acessibilidade (8) |
 | 3. Inovação | Features extras | 10, 12, 16, 22, 23 | Risco, calendário `.ics`, balanceamento, IA, exportações |
-| 4. Segurança | Autenticação e autorização (Cognito, AVP, IAM) | 1, 24 | Segurança (6), políticas Cedar |
-| 4. Segurança | Menor privilégio IAM | 24.9 | Role por Lambda, `cdk-nag` (6) |
+| 4. Segurança | Autenticação e autorização (Cognito, IAM) | 1, 24 | Segurança (6), módulo `autorizar` |
+| 4. Segurança | Menor privilégio IAM | 24.9 | Role por Lambda, assertions do CDK (6, 12) |
 | 4. Segurança | Validação e sanitização de inputs | 5.8, 22.3, 23.3, 25 | JSON Schema, `validarCriterios`, `neutralizarCsv` |
 | 4. Segurança | Dados sensíveis fora de logs/API | 24.7, 25.9, 26, 30 | `mascararSigilo`, logger com lista branca (7, 9) |
-| 4. Segurança | HTTPS e criptografia (KMS/S3 SSE) | 25.4, 25.5 | TLS 1.2, KMS, OAC (6) |
+| 4. Segurança | HTTPS e criptografia (S3 SSE) | 25.4, 25.5 | TLS 1.2, criptografia padrão AWS, OAC (6) |
 | 4. Segurança | LGPD | 19.5, 26 | Privacidade (7), `docs/lgpd.md` |
 | 5. Apresentação | Estrutura do pitch | 35 | Roteiro (tarefas, bloco 12) |
 | 5. Apresentação | Demo ao vivo funcional | 2.8, 33.5, 35 | Restauração da base, E2E do roteiro |
