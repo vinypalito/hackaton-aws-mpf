@@ -112,7 +112,7 @@ svg .seta.on{stroke:#c98a00;stroke-width:3}
    <div class="card"><span class="kpi">4.109</span>expedientes sintéticos</div>
    <div class="card"><span class="kpi">77</span>recursos AWS em 4 stacks CDK</div>
    <div class="card"><span class="kpi">192</span>testes automatizados passando</div>
-   <div class="card"><span class="kpi">≈ US$ 2,48</span>por mês na demo (só o que está implantado)</div>
+   <div class="card"><span class="kpi">≈ US$ 2,29</span>por mês na demo (só o que está implantado)</div>
   </div>
  </div>
 </section>
@@ -349,9 +349,9 @@ svg .seta.on{stroke:#c98a00;stroke-width:3}
 <section class="slide" data-titulo="Serverless × servidor ligado">
  <h2>Serverless × servidor sempre ligado <span class="selo s-crit">Critério 6</span></h2>
  <table><caption>Referência on-demand us-east-1 (USD/mês, 730 h)</caption><thead><tr><th scope="col">Opção</th><th scope="col">Composição</th><th scope="col" class="num">USD/mês</th></tr></thead><tbody>
-  <tr><td>Serverless (este projeto) · demo</td><td>Lambda + API GW + DynamoDB + Cognito + CloudFront/S3 + Bedrock</td><td class="num">≈ 2,48 a 9,10</td></tr>
-  <tr><td>Serverless · piloto</td><td>idem, 300 usuários</td><td class="num">≈ 20 a 30</td></tr>
-  <tr><td>Serverless · produção nacional</td><td>idem, 12.000 usuários</td><td class="num">≈ 643 a 828</td></tr>
+  <tr><td>Serverless (este projeto) · demo</td><td>Lambda + API GW + DynamoDB + Cognito + CloudFront/S3 + Bedrock</td><td class="num">≈ 2,29 a 9,87</td></tr>
+  <tr><td>Serverless · piloto</td><td>idem, 300 usuários</td><td class="num">≈ 19 a 30</td></tr>
+  <tr><td>Serverless · produção nacional</td><td>idem, 12.000 usuários</td><td class="num">≈ 661 a 856</td></tr>
   <tr><td>Servidor mínimo (ocioso também paga)</td><td>EC2 t4g.small + EBS 20 GB gp3 + ALB + RDS PostgreSQL db.t4g.micro 20 GB</td><td class="num">≈ 50</td></tr>
   <tr><td>Servidor com alta disponibilidade</td><td>2× t4g.medium + ALB + RDS db.t4g.medium Multi-AZ 100 GB + NAT Gateway</td><td class="num">≈ 250 (só computação/dados)</td></tr></tbody></table>
  <p>Na demo e no piloto o serverless custa uma fração do servidor. Na escala nacional os valores se aproximam, mas sem servidor para corrigir, escalar ou pagar parado, e com escala automática nos picos.</p>
@@ -372,7 +372,7 @@ svg .seta.on{stroke:#c98a00;stroke-width:3}
  <div class="grid g2">
   <div class="card"><h3>Perguntas frequentes</h3><dl>
    <dt><b>E se a IA errar?</b></dt><dd>O resumo é apoio, com selo "Gerado por IA". Nunca vê dado sigiloso e a tela funciona sem ele.</dd>
-   <dt><b>Quanto custa?</b></dt><dd>Cerca de US$ 2,48/mês na demo; US$ 643 a 828/mês na escala nacional (slide 16).</dd>
+   <dt><b>Quanto custa?</b></dt><dd>Cerca de US$ 2,29/mês na demo; US$ 661 a 856/mês na escala nacional (slide 16).</dd>
    <dt><b>Como garantem o sigilo?</b></dt><dd>Autorização no backend, por setor e nível, com negação por padrão e testes.</dd>
    <dt><b>Por que serverless?</b></dt><dd>Sem servidor para manter, escala automática e custo proporcional ao uso.</dd></dl></div>
   <div class="card"><h3>Acesse</h3><p class="mono">https://d1rlsn9g5sqwu6.cloudfront.net/</p><p>Usuários de demo: GABSUB3-DVT-U02 (CHEFE) e GABSUB3-DVT-U03 (SERVIDOR).</p></div>
