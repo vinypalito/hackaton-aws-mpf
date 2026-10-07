@@ -63,7 +63,8 @@ flowchart LR
 ```
 
 O índice de busca do setor vive na memória da Lambda de consulta e é montado por `Query` no `GSI1` (seção 3.4). Não há
-filas, barramento, Streams nem bucket de índice no MVP.
+componentes assíncronos intermediários nem bucket de índice no MVP; os serviços extras ficam na seção 15
+(opcional/futuro).
 
 ### 2.1 Stacks CDK
 
@@ -522,7 +523,9 @@ com usuários.
 Opcional/futuro (fora da stack do MVP, Req. 36.1): AWS WAF com regras gerenciadas e *rate limit*; chave KMS dedicada;
 AWS X-Ray; AWS Budgets e alarmes por SNS; trilha em S3 Object Lock *Compliance* com retenção legal; Amazon Verified
 Permissions (Cedar) se a matriz crescer; EventBridge bus/SQS para integração por eventos com o Único; orquestração de
-lotes acima de 200 itens com Step Functions. Reuso: catálogos e `setores.gerenciadores` dirigem a
+lotes acima de 200 itens com Step Functions.
+
+Reuso: catálogos e `setores.gerenciadores` dirigem a
 UI; `packages/dominio` publicado como pacote; CDK parametrizado por `orgao` e `ambiente`.
 
 ## 16. Matriz de rastreabilidade: critério de avaliação → requisito → componente
