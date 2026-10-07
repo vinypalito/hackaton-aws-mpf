@@ -102,6 +102,10 @@
   color: #c9d3ec;
 }
 
+.usuario-linha dt {
+  margin-right: 3px;
+}
+
 .usuario-linha dd {
   margin-right: 4px;
 }

@@ -27,9 +27,10 @@ a.id:hover { color: var(--u-azul); text-decoration: underline; }
 .vazio { padding: 12px; font-size: 0.8125rem; color: var(--u-tinta-3); }
 
 /* Radar */
-.radar { overflow: hidden; }
+.radar { overflow: clip; }
 .radar-cab, .radar-linhas li { display: grid; grid-template-columns: minmax(240px, 360px) minmax(0, 1fr); }
-.radar-cab { border-bottom: 1px solid #ecebe3; }
+/* Fixo ao rolar: o histograma de vencimentos fica sempre à vista. */
+.radar-cab { position: sticky; top: 0; z-index: 3; background: #fff; border-bottom: 1px solid #ecebe3; border-radius: 14px 14px 0 0; box-shadow: 0 6px 8px -6px rgba(21, 23, 28, 0.18); }
 .radar-rotulo { display: flex; align-items: center; gap: 10px; padding: 10px 16px; min-width: 0; }
 .radar-cab .radar-rotulo { flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 2px; }
 .trilha { position: relative; margin-right: 16px; }
